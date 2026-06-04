@@ -1,10 +1,17 @@
 :root {
-  /* Фолбэки на случай, если открыли вне Telegram (тогда --tg-* не заданы). */
-  --bg: var(--tg-bg-color, #0b0f14);
-  --text: var(--tg-text-color, #e8eef5);
-  --hint: var(--tg-hint-color, #7b8794);
-  --accent: var(--tg-button-color, #38bdf8);
-  --card: var(--tg-secondary-bg-color, #121821);
+  --bg: #13170e;
+  --panel: #222a17;
+  --panel-line: #3a472a;
+  --ink: #eef0d8;
+  --muted: #9aa67c;
+  --green: #7fae3a;
+  --green-2: #a6d24b;
+  --khaki: #cdb87a;
+  --red: #d2493a;
+  --fire: #ff8a3d;
+  --shadow: #0a0d07;
+
+  --font-pixel: 'Handjet', 'Courier New', monospace;
 }
 
 * {
@@ -19,69 +26,26 @@ body,
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  background: radial-gradient(120% 80% at 50% -10%, #20290f 0%, var(--bg) 60%), var(--bg);
+  color: var(--ink);
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1.15;
+  -webkit-font-smoothing: none;
+  text-rendering: optimizeSpeed;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.screen {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 16px;
-  padding: 24px;
-  max-width: 480px;
-  margin: 0 auto;
-  text-align: center;
+/* Пиксель — значит без сглаживания у графики. */
+img,
+svg {
+  image-rendering: pixelated;
 }
 
-.badge {
-  align-self: center;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent);
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
-  border-radius: 999px;
-  padding: 4px 12px;
-}
-
-h1 {
-  font-size: 32px;
-  line-height: 1.1;
-  margin: 0;
-}
-
-.sub {
-  color: var(--hint);
-  font-size: 16px;
-  margin: 0;
-}
-
-.meta {
-  display: grid;
-  gap: 8px;
-  margin: 8px 0 0;
-  padding: 16px;
-  background: var(--card);
-  border-radius: 16px;
-  text-align: left;
-}
-
-.meta > div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.meta dt {
-  color: var(--hint);
-  margin: 0;
-}
-
-.meta dd {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
+button {
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 0;
 }

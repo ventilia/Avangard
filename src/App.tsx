@@ -1,36 +1,46 @@
-import { isTelegram, tg } from './telegram';
+import { useGame } from './game/useGame';
+import { Oleg } from './components/Oleg';
+import { DembelTimer } from './components/DembelTimer';
+import { WeekBoard } from './components/WeekBoard';
+import { Dialogue } from './components/Dialogue';
+import { Stats } from './components/Stats';
+import { ActionButton } from './components/ActionButton';
+import { isTelegram } from './telegram';
 
-// Заглушка-«пустырь». Реальный экран появится, когда будет концепция.
 export function App() {
-  const user = tg?.initDataUnsafe.user;
+  const g = useGame();
 
   return (
-    <main className="screen">
-      <div className="badge">пустырь · v0</div>
-      <h1>Рядовой&nbsp;Авангард</h1>
-      <p className="sub">
-        {isTelegram
-          ? user
-            ? `На связи, ${user.first_name}. Каркас Mini App работает.`
-            : 'Каркас Mini App работает. Ждём концепцию.'
-          : 'Открой это внутри Telegram-бота — здесь появится приложение.'}
-      </p>
+    <main className="app">
+      <header className="topbar">
+        <h1 className="title">
+          РЯДОВОЙ <b>АВАНГАРД</b>
+        </h1>
+        <div className="streak" title="стрик">🔥 {g.streak}</div>
+      </header>
 
-      {isTelegram && (
-        <dl className="meta">
-          <div>
-            <dt>Платформа</dt>
-            <dd>{tg?.platform}</dd>
-          </div>
-          <div>
-            <dt>Версия WebApp</dt>
-            <dd>{tg?.version}</dd>
-          </div>
-          <div>
-            <dt>Тема</dt>
-            <dd>{tg?.colorScheme}</dd>
-          </div>
-        </dl>
+      <DembelTimer />
+
+      <section className="stage">
+        <Oleg stubble={g.stubble} flash={g.flash} />
+        <Dialogue text={g.olegLine} />
+      </section>
+
+      <ActionButton ritual={g.todayRitual} done={g.todayDone} onDo={g.complete} />
+
+      <WeekBoard rituals={g.week} todayWeekday={g.todayWeekday} doneWeekdays={g.doneThisWeek} />
+
+      <Stats streak={g.streak} best={g.bestStreak} total={g.total} served={g.served} progress={g.progress} />
+
+      {/* Dev-панель видна только вне Telegram — чтобы тестировать неделю. */}
+      {!isTelegram && (
+        <div className="dev">
+          <span>dev:</span>
+          <button onClick={() => g.travel(-1)}>← день</button>
+          <button onClick={() => g.travel(1)}>день →</button>
+          <button onClick={g.reset}>сброс</button>
+          <span className="dev__off">offset {g.dayOffset}</span>
+        </div>
       )}
     </main>
   );

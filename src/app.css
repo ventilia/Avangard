@@ -1,0 +1,320 @@
+/* Раскладка приложения */
+.app {
+  max-width: 460px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 16px 16px 28px;
+}
+
+/* Шапка */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+.title b {
+  color: var(--green-2);
+  font-weight: 900;
+}
+.streak {
+  font-weight: 700;
+  color: var(--fire);
+  font-size: 22px;
+  background: var(--panel);
+  border: 3px solid var(--panel-line);
+  box-shadow: 0 4px 0 var(--shadow);
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+/* Таймер до дембеля */
+.dembel {
+  text-align: center;
+  background: var(--panel);
+  border: 3px solid var(--panel-line);
+  box-shadow: 0 5px 0 var(--shadow);
+  padding: 10px 8px;
+}
+.dembel__label {
+  color: var(--muted);
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.dembel__time {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.dembel__time .u {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 54px;
+}
+.dembel__time .u b {
+  font-size: 30px;
+  font-weight: 900;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.dembel__time .u span {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Сцена с Олегом */
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-top: 6px;
+}
+.oleg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: bob 2.6s ease-in-out infinite;
+}
+.oleg__svg {
+  width: 160px;
+  height: auto;
+}
+.oleg__shadow {
+  width: 92px;
+  height: 9px;
+  margin-top: 6px;
+  background: var(--shadow);
+  opacity: 0.5;
+  border-radius: 50%;
+}
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.oleg[data-flash='shave'] {
+  animation: pop 0.5s ease;
+}
+.oleg[data-flash='task'] {
+  animation: nod 0.5s ease;
+}
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes nod {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Реплика Олега */
+.bubble {
+  position: relative;
+  background: var(--ink);
+  color: #1c2410;
+  border: 3px solid #0c1106;
+  box-shadow: 0 4px 0 var(--shadow);
+  padding: 8px 12px;
+  max-width: 300px;
+}
+.bubble__text {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.05;
+}
+.bubble::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 10px solid #0c1106;
+}
+
+/* Главная кнопка */
+.action {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--green);
+  color: #10180a;
+  border: 3px solid #2c3a16;
+  box-shadow: 0 6px 0 var(--shadow);
+  padding: 12px;
+  transition: transform 0.05s, box-shadow 0.05s;
+}
+.action[data-kind='shave'] {
+  background: var(--green-2);
+}
+.action__sub {
+  font-size: 15px;
+  color: #243314;
+  opacity: 0.85;
+}
+.action__cta {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+.action:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--shadow);
+}
+.action:disabled {
+  background: var(--panel);
+  color: var(--muted);
+  border-color: var(--panel-line);
+  box-shadow: 0 4px 0 var(--shadow);
+  cursor: default;
+}
+
+/* Доска недели */
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.day {
+  background: var(--panel);
+  border: 3px solid var(--panel-line);
+  box-shadow: 0 4px 0 var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 2px;
+}
+.day__wd {
+  font-size: 15px;
+  color: var(--muted);
+}
+.day__icon {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--khaki);
+}
+.day__name {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+.day.is-today {
+  border-color: var(--green-2);
+  box-shadow: 0 0 0 1px var(--green-2), 0 4px 0 var(--shadow);
+}
+.day.is-today .day__wd {
+  color: var(--green-2);
+}
+.day.is-done .day__icon {
+  color: var(--green-2);
+}
+
+/* Статистика */
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.progress {
+  position: relative;
+  height: 26px;
+  background: var(--panel);
+  border: 3px solid var(--panel-line);
+  box-shadow: 0 4px 0 var(--shadow);
+  overflow: hidden;
+}
+.progress__bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: repeating-linear-gradient(90deg, var(--green) 0 8px, var(--green-2) 8px 10px);
+}
+.progress__label {
+  position: relative;
+  z-index: 1;
+  display: block;
+  text-align: center;
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--ink);
+  text-shadow: 1px 1px 0 #000, -1px 1px 0 #000;
+}
+.stats__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.stat {
+  background: var(--panel);
+  border: 3px solid var(--panel-line);
+  box-shadow: 0 4px 0 var(--shadow);
+  text-align: center;
+  padding: 8px 2px;
+}
+.stat b {
+  display: block;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.stat span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Dev-панель (только вне Telegram) */
+.dev {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--muted);
+  opacity: 0.7;
+}
+.dev button {
+  background: var(--panel);
+  border: 2px solid var(--panel-line);
+  color: var(--ink);
+  padding: 3px 8px;
+  font-size: 14px;
+}
+.dev__off {
+  margin-left: auto;
+}
