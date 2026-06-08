@@ -25,11 +25,12 @@ export function App() {
     }, []);
 
     // Дефолты расположения Олега. Центрирован по умолчанию.
-    // max-width: 96vw на .oleg не даёт рукам вылезти за края —
-    // браузер сам выберет ограничивающую сторону (высота или ширина).
+    // width: 100% на .oleg растягивает картинку на всю ширину контейнера,
+    // высота вытекает из аспекта. max-width: 520px и max-height: --oleg-max-h
+    // не дают фигуре разрастись на десктопе/TG Desktop.
     const olegWrap: CSSProperties = {
         '--ox': `${scene.oleg.xPct ?? 0}%`,
-        '--oleg-max-h': `${scene.oleg.heightVh ?? 82}vh`,
+        '--oleg-max-h': `${scene.oleg.heightVh ?? 90}vh`,
         bottom: `${-(scene.oleg.dropVh ?? 4)}vh`,
     } as CSSProperties;
 
