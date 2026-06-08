@@ -29,7 +29,7 @@ export function App() {
     // браузер сам выберет ограничивающую сторону (высота или ширина).
     const olegWrap: CSSProperties = {
         '--ox': `${scene.oleg.xPct ?? 0}%`,
-        height: `${scene.oleg.heightVh ?? 78}vh`,
+        '--oleg-max-h': `${scene.oleg.heightVh ?? 82}vh`,
         bottom: `${-(scene.oleg.dropVh ?? 4)}vh`,
     } as CSSProperties;
 
