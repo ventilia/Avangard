@@ -1,18 +1,128 @@
-import { useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { oleg, pickScene } from './scenes';
+import { initTelegram } from './telegram';
+
+
+const DUST = Array.from({ length: 16 }, () => ({
+    left: Math.random() * 100,
+    size: 1 + Math.random() * 2.4,
+    delay: Math.random() * 14,
+    dur: 16 + Math.random() * 16,
+    drift: (Math.random() * 2 - 1) * 7, // влево/вправо за время полёта, vw
+    max: 0.18 + Math.random() * 0.32, // пиковая яркость
+}));
+
+// Слоты правого рейла под будущие действия (брить, кормить и т.д.).
+const RAIL_SLOTS = 3;
 
 export function App() {
-  const [text, setText] = useState('');
 
-  return (
-    <main className="screen">
-      <h1 className="title">пустырь</h1>
-      <textarea
-        className="field"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="…"
-        spellCheck={false}
-      />
-    </main>
-  );
+    const [scene] = useState(pickScene);
+    const [menuOpen, setMenuOpen] = useState(false);
+
+    useEffect(() => {
+        initTelegram();
+    }, []);
+
+    const olegWrap: CSSProperties = {
+        '--ox': `${scene.oleg.xPct ?? 0}%`,
+        height: `${scene.oleg.heightVh ?? 72}vh`,
+        bottom: `${-(scene.oleg.dropVh ?? 4)}vh`,
+    } as CSSProperties;
+
+    return (
+        <div className="stage">
+            {/* Фон сцены + медленный Ken Burns.
+          URL в кавычках — иначе CSS ломается на пробелах и скобках в именах файлов. */}
+            <div className="bg" style={{ backgroundImage: `url("${scene.src}")` }} />
+
+            {/*  */}
+            <div className="grade" />
+
+            {/*  */}
+            <div className="floor-fade" />
+
+            {/*  */}
+            <div className="oleg-wrap" style={olegWrap}>
+                <img className="oleg" src={oleg} alt="Олег" draggable={false} />
+            </div>
+
+            {/*  */}
+            <div className="foot-fade" />
+
+            {/*  */}
+            <div className="dust" aria-hidden>
+                {DUST.map((d, i) => (
+                    <span
+                        key={i}
+                        style={
+                            {
+                                left: `${d.left}%`,
+                                width: `${d.size}px`,
+                                height: `${d.size}px`,
+                                '--dur': `${d.dur}s`,
+                                '--delay': `${d.delay}s`,
+                                '--drift': `${d.drift}vw`,
+                                '--max': d.max,
+                            } as CSSProperties
+                        }
+                    />
+                ))}
+            </div>
+
+            {/* */}
+            <div className="grain" aria-hidden />
+
+            {/*  */}
+            <div className="vignette" />
+
+            {/* */}
+            <div className="flicker" aria-hidden />
+
+            {/**/}
+            <header className="hud-top">
+                <h1 className="brand">
+                    Рядовой <span className="brand-accent">Авангард</span>
+                </h1>
+                <button
+                    className="burger"
+                    onClick={() => setMenuOpen(true)}
+                    aria-label="Меню"
+                    aria-expanded={menuOpen}
+                >
+                    <span />
+                    <span />
+                    <span />
+                </button>
+            </header>
+
+            {/* */}
+            <div className="bottom-field" aria-hidden>
+                <div className="bottom-actions">
+                    {Array.from({ length: RAIL_SLOTS }, (_, i) => (
+                        <div key={i} className="rail-slot" />
+                    ))}
+                </div>
+            </div>
+
+            {/* ── Меню */}
+            {menuOpen && (
+                <div className="menu-overlay" onClick={() => setMenuOpen(false)}>
+                    <aside className="menu-panel" onClick={(e) => e.stopPropagation()}>
+                        <div className="menu-head">
+                            <span>Меню</span>
+                            <button
+                                className="menu-close"
+                                onClick={() => setMenuOpen(false)}
+                                aria-label="Закрыть"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <p className="menu-empty">пока пусто</p>
+                    </aside>
+                </div>
+            )}
+        </div>
+    );
 }
