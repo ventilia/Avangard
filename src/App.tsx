@@ -12,11 +12,11 @@ const DUST = Array.from({ length: 16 }, () => ({
     max: 0.18 + Math.random() * 0.32, // пиковая яркость
 }));
 
-// Слоты правого рейла под будущие действия (брить, кормить и т.д.).
+
 const RAIL_SLOTS = 3;
 
 export function App() {
-
+    // Сцену выбираем один раз за заход. Перезагрузка страницы = новая сцена.
     const [scene] = useState(pickScene);
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -24,9 +24,12 @@ export function App() {
         initTelegram();
     }, []);
 
+    // Дефолты расположения Олега. Центрирован по умолчанию.
+    // max-width: 96vw на .oleg не даёт рукам вылезти за края —
+    // браузер сам выберет ограничивающую сторону (высота или ширина).
     const olegWrap: CSSProperties = {
         '--ox': `${scene.oleg.xPct ?? 0}%`,
-        height: `${scene.oleg.heightVh ?? 72}vh`,
+        height: `${scene.oleg.heightVh ?? 78}vh`,
         bottom: `${-(scene.oleg.dropVh ?? 4)}vh`,
     } as CSSProperties;
 
@@ -36,21 +39,21 @@ export function App() {
           URL в кавычках — иначе CSS ломается на пробелах и скобках в именах файлов. */}
             <div className="bg" style={{ backgroundImage: `url("${scene.src}")` }} />
 
-            {/*  */}
+            {/* Кинематографичный цветокор и затемнение по краям кадра */}
             <div className="grade" />
 
-            {/*  */}
+            {/* Затемнение пустого пола (за Олегом) */}
             <div className="floor-fade" />
 
-            {/*  */}
+            {/* Олег: центрируется флексом, низ растворяется маской */}
             <div className="oleg-wrap" style={olegWrap}>
                 <img className="oleg" src={oleg} alt="Олег" draggable={false} />
             </div>
 
-            {/*  */}
+            {/* Доп. растворение самого низа поверх Олега — прячет срез торса */}
             <div className="foot-fade" />
 
-            {/*  */}
+            {/* Пылинки */}
             <div className="dust" aria-hidden>
                 {DUST.map((d, i) => (
                     <span
@@ -70,16 +73,16 @@ export function App() {
                 ))}
             </div>
 
-            {/* */}
+            {/* Зерно плёнки — еле заметная живая текстура поверх кадра */}
             <div className="grain" aria-hidden />
 
-            {/*  */}
+            {/* Виньетка для фокуса на Олеге */}
             <div className="vignette" />
 
-            {/* */}
+            {/* Редкое мерцание ламп */}
             <div className="flicker" aria-hidden />
 
-            {/**/}
+            {/* ── Хедер ─────────────────────────────────────────────── */}
             <header className="hud-top">
                 <h1 className="brand">
                     Рядовой <span className="brand-accent">Авангард</span>
@@ -96,7 +99,7 @@ export function App() {
                 </button>
             </header>
 
-            {/* */}
+            {/* ── Нижнее поле: имя/статус слева + три квадрата-действия справа ── */}
             <div className="bottom-field" aria-hidden>
                 <div className="bottom-actions">
                     {Array.from({ length: RAIL_SLOTS }, (_, i) => (
@@ -105,7 +108,7 @@ export function App() {
                 </div>
             </div>
 
-            {/* ── Меню */}
+            {/* ── Меню (пока пустое) ─────────────────────────────────── */}
             {menuOpen && (
                 <div className="menu-overlay" onClick={() => setMenuOpen(false)}>
                     <aside className="menu-panel" onClick={(e) => e.stopPropagation()}>
