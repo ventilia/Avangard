@@ -73,16 +73,16 @@ export function App() {
                 ))}
             </div>
 
-            {/* Зерно плёнки — еле заметная живая текстура поверх кадра */}
+            {/*  */}
             <div className="grain" aria-hidden />
 
-            {/* Виньетка для фокуса на Олеге */}
+            {/*  */}
             <div className="vignette" />
 
-            {/* Редкое мерцание ламп */}
+            {/* */}
             <div className="flicker" aria-hidden />
 
-            {/* ── Хедер ─────────────────────────────────────────────── */}
+            {/* Хедер*/}
             <header className="hud-top">
                 <h1 className="brand">
                     Рядовой <span className="brand-accent">Авангард</span>
@@ -108,7 +108,7 @@ export function App() {
                 </div>
             </div>
 
-            {/* ── Меню (пока пустое) ─────────────────────────────────── */}
+            {/*  Меню */}
             {menuOpen && (
                 <div className="menu-overlay" onClick={() => setMenuOpen(false)}>
                     <aside className="menu-panel" onClick={(e) => e.stopPropagation()}>
