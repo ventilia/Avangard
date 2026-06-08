@@ -89,15 +89,13 @@ body {
 }
 
 
+
 .oleg-wrap {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  /* Высота — потолок для картинки внутри.
-     --oleg-max-h приходит из App.tsx через inline style.
-     overflow: hidden нужен чтобы маска корректно обрезала низ
-     когда img выходит за пределы контейнера по высоте. */
+
   height: var(--oleg-max-h, 90vh);
   display: flex;
   justify-content: center;
@@ -120,20 +118,26 @@ body {
 }
 
 
+
 .oleg {
   /* Растягиваем на всю ширину контейнера — высота вытекает из аспекта.
      На десктопе/TG Desktop max-width не даёт фигуре стать огромной.
      max-height страхует от переполнения на очень узких и высоких экранах.
-     Маска растворяет низ — скрывает срез торса органично. */
+     Маска растворяет низ — скрывает срез торса органично.
+     image-rendering: pixelated сохраняет пиксельный стиль при масштабировании. */
   width: 100%;
   max-width: 520px;
   height: auto;
   max-height: var(--oleg-max-h, 90vh);
   transform-origin: 50% 100%;
+  image-rendering: pixelated;
   -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgba(0, 0, 0, 0) 92%);
   mask-image: linear-gradient(to bottom, #000 55%, rgba(0, 0, 0, 0) 92%);
   filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.5)) saturate(0.95) contrast(1.03);
   animation: breathe 5.2s ease-in-out infinite;
+  /* Позиционируем поверх тени */
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes breathe {
@@ -143,6 +147,55 @@ body {
   }
   50% {
     transform: translateY(-0.7%) scale(1.006);
+  }
+}
+
+
+/* ── Пиксельная тень под героем ───────────────────────────────────── */
+/*
+  Эффект строится на box-shadow со step-функцией через многослойные тени:
+  каждый «пиксель» тени — отдельная тень со смещением и размытием = 0.
+  Результат: жёсткая, угловатая, ретро-тень как в старых RPG.
+  Позиционируется абсолютно в низу flex-контейнера, под img (z-index: 0).
+*/
+.oleg-shadow {
+  position: absolute;
+  bottom: 4px;      /* чуть выше самого низа — чтобы не срезалось floor-fade */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;       /* под спрайтом */
+
+  /* Размер эллипса тени — подстраивается под ширину спрайта */
+  width: min(52%, 260px);
+  height: 0;
+
+  /* Пиксельная тень строится через многослойный box-shadow.
+     Каждая строка = один "пиксельный" ряд тени.
+     spread-radius 0, blur 0 — никакого размытия, чистые пиксели. */
+  box-shadow:
+    /* ряд 1 — самый широкий, ближний к ногам */
+          0  2px 0 4px  rgba(0, 0, 0, 0.55),
+            /* ряд 2 */
+          0  6px 0 6px  rgba(0, 0, 0, 0.40),
+            /* ряд 3 */
+          0 10px 0 4px  rgba(0, 0, 0, 0.28),
+            /* ряд 4 — дальний, узкий */
+          0 14px 0 2px  rgba(0, 0, 0, 0.14);
+
+  /* Тень дышит вместе с героем */
+  animation: shadow-breathe 5.2s ease-in-out infinite;
+}
+
+@keyframes shadow-breathe {
+  0%,
+  100% {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 1;
+  }
+  50% {
+    /* Герой чуть приподнимается — тень сужается и светлеет */
+    transform: translateX(-50%) scaleX(0.92);
+    opacity: 0.75;
   }
 }
 
@@ -230,7 +283,6 @@ body {
   pointer-events: none;
   background: radial-gradient(125% 85% at 50% 35%, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.5) 100%);
   mix-blend-mode: multiply;
-
   animation: vig-breath 11s ease-in-out infinite;
 }
 
