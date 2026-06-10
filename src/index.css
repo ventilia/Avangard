@@ -1,10 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400..700&display=swap');
 
 :root {
-  --void: #07060a;
+  --void: #050406;
   --paper: #f4f1e8;
   --accent: #eab94e;
-  --font-display: 'Press Start 2P', system-ui, sans-serif;
+  /* Press Start 2P не имеет кириллицы → она подхватывается из Pixelify Sans. */
+  --font-display: 'Press Start 2P', 'Pixelify Sans', system-ui, sans-serif;
+  --font-ui: 'Pixelify Sans', 'Press Start 2P', system-ui, sans-serif;
 }
 
 * {
@@ -19,59 +21,79 @@ body,
 }
 
 body {
-  background: var(--void);
+  background: #000;
   color: var(--paper);
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   overscroll-behavior: none;
 }
 
+/* ── Letterbox-каркас ────────────────────────────────────────────────── */
 
-
-.stage {
+.frame {
   position: fixed;
   inset: 0;
-  height: 100vh;
-  height: 100dvh;
+  display: grid;
+  place-items: center;
   overflow: hidden;
+  background: #000;
+}
+
+/* Размытая сцена в полях letterbox — вместо мёртвого чёрного. */
+.frame-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(34px) brightness(0.34) saturate(0.85);
+  transform: scale(1.18);
+  pointer-events: none;
+}
+
+/* Опорный блок 9:16. Размеры задаются инлайном (BASE_W×BASE_H),
+   transform: scale() — снаружи. Всё внутри верстается в этих px. */
+.stage {
+  position: relative;
+  overflow: hidden;
+  transform-origin: center center;
   background: var(--void);
   -webkit-user-select: none;
   user-select: none;
 }
 
+/* ── Фон ─────────────────────────────────────────────────────────────── */
 
 .bg {
   position: absolute;
-  inset: -2%;
+  inset: 0;
   background-size: cover;
   background-position: center;
-  animation: kenburns 28s ease-in-out infinite alternate;
+  image-rendering: pixelated;
+  animation: kenburns 30s ease-in-out infinite alternate;
   will-change: transform;
 }
 
 @keyframes kenburns {
   from {
-    transform: scale(1.06) translate(0, 0);
+    transform: scale(1.05) translate(0, 0);
   }
   to {
-    transform: scale(1.12) translate(-1.2%, -1%);
+    transform: scale(1.11) translate(-1%, -1%);
   }
 }
-
 
 .grade {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: linear-gradient(
-          180deg,
-          rgba(10, 16, 28, 0.32) 0%,
-          rgba(0, 0, 0, 0) 26%,
-          rgba(0, 0, 0, 0) 60%,
-          rgba(8, 6, 4, 0.42) 100%
+    180deg,
+    rgba(10, 16, 28, 0.32) 0%,
+    rgba(0, 0, 0, 0) 26%,
+    rgba(0, 0, 0, 0) 58%,
+    rgba(8, 6, 4, 0.46) 100%
   );
   mix-blend-mode: multiply;
 }
-
 
 .floor-fade {
   position: absolute;
@@ -81,35 +103,43 @@ body {
   height: 46%;
   pointer-events: none;
   background: linear-gradient(
-          to bottom,
-          rgba(0, 0, 0, 0) 0%,
-          rgba(14, 11, 8, 0.45) 52%,
-          rgba(8, 7, 6, 0.9) 100%
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(12, 10, 8, 0.5) 52%,
+    rgba(6, 6, 5, 0.92) 100%
   );
 }
 
+.foot-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 10%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(5, 5, 6, 0.9) 100%);
+}
 
+/* ── Герой ───────────────────────────────────────────────────────────── */
 
 .oleg-wrap {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
-
-  height: var(--oleg-max-h, 90vh);
+  bottom: var(--oleg-bottom, -10%);
+  height: var(--oleg-h, 82%);
   display: flex;
   justify-content: center;
   align-items: flex-end;
   transform: translateX(var(--ox, 0));
   pointer-events: none;
-  animation: oleg-in 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  overflow: hidden;
+  animation: oleg-in 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 @keyframes oleg-in {
   from {
     opacity: 0;
-    transform: translate(var(--ox, 0), 3.5%);
+    transform: translate(var(--ox, 0), 3%);
   }
   to {
     opacity: 1;
@@ -117,27 +147,15 @@ body {
   }
 }
 
-
-
 .oleg {
-  /* Растягиваем на всю ширину контейнера — высота вытекает из аспекта.
-     На десктопе/TG Desktop max-width не даёт фигуре стать огромной.
-     max-height страхует от переполнения на очень узких и высоких экранах.
-     Маска растворяет низ — скрывает срез торса органично.
-     image-rendering: pixelated сохраняет пиксельный стиль при масштабировании. */
-  width: 100%;
-  max-width: 520px;
-  height: auto;
-  max-height: var(--oleg-max-h, 90vh);
-  transform-origin: 50% 100%;
+  height: 100%;
+  width: auto;
   image-rendering: pixelated;
-  -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgba(0, 0, 0, 0) 92%);
-  mask-image: linear-gradient(to bottom, #000 55%, rgba(0, 0, 0, 0) 92%);
-  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.5)) saturate(0.95) contrast(1.03);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 60%, rgba(0, 0, 0, 0) 94%);
+  mask-image: linear-gradient(to bottom, #000 60%, rgba(0, 0, 0, 0) 94%);
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)) saturate(0.97) contrast(1.03);
   animation: breathe 5.2s ease-in-out infinite;
-  /* Позиционируем поверх тени */
-  position: relative;
-  z-index: 1;
 }
 
 @keyframes breathe {
@@ -146,43 +164,26 @@ body {
     transform: translateY(0) scale(1);
   }
   50% {
-    transform: translateY(-0.7%) scale(1.006);
+    transform: translateY(-0.6%) scale(1.005);
   }
 }
 
-
-/* ── Пиксельная тень под героем ───────────────────────────────────── */
-/*
-  Эффект строится на box-shadow со step-функцией через многослойные тени:
-  каждый «пиксель» тени — отдельная тень со смещением и размытием = 0.
-  Результат: жёсткая, угловатая, ретро-тень как в старых RPG.
-  Позиционируется абсолютно в низу flex-контейнера, под img (z-index: 0).
-*/
+/* Пиксельная тень: жёсткие ступенчатые «ряды» через многослойный box-shadow.
+   Сильнее, шире и дальше — стелется по полу. */
 .oleg-shadow {
   position: absolute;
-  bottom: 4px;      /* чуть выше самого низа — чтобы не срезалось floor-fade */
   left: 50%;
+  bottom: 12%;
   transform: translateX(-50%);
-  z-index: 0;       /* под спрайтом */
-
-  /* Размер эллипса тени — подстраивается под ширину спрайта */
-  width: min(52%, 260px);
-  height: 0;
-
-  /* Пиксельная тень строится через многослойный box-shadow.
-     Каждая строка = один "пиксельный" ряд тени.
-     spread-radius 0, blur 0 — никакого размытия, чистые пиксели. */
+  width: 78%;
+  height: 34px;
+  background: rgba(0, 0, 0, 0.62);
+  border-radius: 50%;
+  /* ступенчатый ореол — намёк на пиксельную тень, плюс мягкий спад */
   box-shadow:
-    /* ряд 1 — самый широкий, ближний к ногам */
-          0  2px 0 4px  rgba(0, 0, 0, 0.55),
-            /* ряд 2 */
-          0  6px 0 6px  rgba(0, 0, 0, 0.40),
-            /* ряд 3 */
-          0 10px 0 4px  rgba(0, 0, 0, 0.28),
-            /* ряд 4 — дальний, узкий */
-          0 14px 0 2px  rgba(0, 0, 0, 0.14);
-
-  /* Тень дышит вместе с героем */
+    0 0 0 8px rgba(0, 0, 0, 0.4),
+    0 0 0 18px rgba(0, 0, 0, 0.2),
+    0 8px 10px 3px rgba(0, 0, 0, 0.45);
   animation: shadow-breathe 5.2s ease-in-out infinite;
 }
 
@@ -193,24 +194,12 @@ body {
     opacity: 1;
   }
   50% {
-    /* Герой чуть приподнимается — тень сужается и светлеет */
-    transform: translateX(-50%) scaleX(0.92);
-    opacity: 0.75;
+    transform: translateX(-50%) scaleX(0.93);
+    opacity: 0.8;
   }
 }
 
-
-.foot-fade {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 15%;
-  pointer-events: none;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(6, 6, 8, 0.92) 100%);
-}
-
-
+/* ── Атмосфера ───────────────────────────────────────────────────────── */
 
 .dust {
   position: absolute;
@@ -220,9 +209,9 @@ body {
 }
 .dust span {
   position: absolute;
-  bottom: -6%;
+  bottom: -12px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 250, 235, 0.95), rgba(255, 250, 235, 0) 70%);
+  background: radial-gradient(circle, rgba(255, 250, 235, 0.98), rgba(255, 250, 235, 0) 70%);
   opacity: 0;
   animation: dust-rise var(--dur, 18s) linear var(--delay, 0s) infinite;
 }
@@ -233,26 +222,25 @@ body {
     opacity: 0;
   }
   12% {
-    opacity: var(--max, 0.4);
+    opacity: var(--max, 0.5);
   }
   88% {
-    opacity: var(--max, 0.4);
+    opacity: var(--max, 0.5);
   }
   100% {
-    transform: translate(var(--drift, 0), -112vh);
+    transform: translate(var(--drift, 0), -760px);
     opacity: 0;
   }
 }
-
 
 .grain {
   position: absolute;
   inset: -40%;
   pointer-events: none;
-  opacity: 0.06;
+  opacity: 0.08;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation: grain 1.1s steps(5) infinite;
+  animation: grain 1s steps(5) infinite;
   will-change: transform;
 }
 
@@ -281,7 +269,7 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(125% 85% at 50% 35%, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.5) 100%);
+  background: radial-gradient(125% 85% at 50% 36%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.55) 100%);
   mix-blend-mode: multiply;
   animation: vig-breath 11s ease-in-out infinite;
 }
@@ -289,48 +277,54 @@ body {
 @keyframes vig-breath {
   0%,
   100% {
-    opacity: 0.88;
+    opacity: 0.86;
   }
   50% {
     opacity: 1;
   }
 }
 
-
+/* Мерцание ламп — заметнее и чаще. */
 .flicker {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: #aeb8c8;
+  background: #b9c4d4;
   mix-blend-mode: overlay;
   opacity: 0;
-  animation: flicker 7.3s steps(1, end) infinite;
+  animation: flicker 5.5s steps(1, end) infinite;
 }
 
 @keyframes flicker {
   0%,
-  92%,
+  86%,
   100% {
     opacity: 0;
   }
-  93% {
-    opacity: 0.05;
+  87% {
+    opacity: 0.1;
+  }
+  88% {
+    opacity: 0.02;
+  }
+  89% {
+    opacity: 0.15;
+  }
+  90% {
+    opacity: 0.04;
+  }
+  92% {
+    opacity: 0.11;
   }
   94% {
     opacity: 0;
   }
-  95% {
-    opacity: 0.07;
-  }
-  96% {
-    opacity: 0.01;
-  }
   97% {
-    opacity: 0.05;
+    opacity: 0.07;
   }
 }
 
-
+/* ── HUD: хедер ──────────────────────────────────────────────────────── */
 
 .hud-top {
   position: absolute;
@@ -341,30 +335,28 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 26px;
-
+  padding: 14px 14px 26px;
   background: linear-gradient(
-          to bottom,
-          rgba(8, 9, 11, 0.97) 0%,
-          rgba(8, 9, 11, 0.92) 48%,
-          rgba(8, 9, 11, 0) 100%
+    to bottom,
+    rgba(6, 7, 9, 0.95) 0%,
+    rgba(6, 7, 9, 0.78) 45%,
+    rgba(6, 7, 9, 0) 100%
   );
   pointer-events: none;
 }
 
 .brand {
   margin: 0;
+  font-family: var(--font-display);
   font-weight: 600;
-  font-size: 14px;
-  line-height: 1.3;
-  letter-spacing: 0px;
+  font-size: 13px;
+  line-height: 1.35;
   color: var(--paper);
-  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.65);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.7);
 }
 .brand-accent {
   color: var(--accent);
 }
-
 
 .burger {
   pointer-events: auto;
@@ -372,11 +364,11 @@ body {
   flex-direction: column;
   justify-content: center;
   gap: 4px;
-  width: 40px;
-  height: 34px;
+  width: 38px;
+  height: 32px;
   padding: 8px;
   background: rgba(10, 10, 14, 0.5);
-  border: 2px solid rgba(244, 241, 232, 0.25);
+  border: 2px solid rgba(244, 241, 232, 0.28);
   cursor: pointer;
   transition: transform 80ms ease, border-color 120ms ease;
 }
@@ -386,67 +378,306 @@ body {
   background: var(--paper);
   box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6);
 }
-.burger:hover {
-  border-color: rgba(244, 241, 232, 0.5);
-}
 .burger:active {
   transform: translate(1px, 1px);
 }
 
-/* ── HUD: нижнее поле с именем и слотами действий ───────────────────── */
+/* ── Диалоговое окно ─────────────────────────────────────────────────── */
 
-.bottom-field {
+.dialog {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
-  z-index: 10;
-  height: 68px;
-  border: 2px solid rgba(244, 241, 232, 0.22);
-  background: rgba(14, 16, 11, 0.55);
-  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.5);
+  left: 14px;
+  right: 14px;
+  top: 84px;
+  z-index: 25;
+  padding: 17px 16px 22px;
+  background: #12150d;
+  border: 3px solid #d8a93e;
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.5),
+    inset 0 0 22px rgba(0, 0, 0, 0.5),
+    0 0 0 3px #0b0c07,
+    7px 7px 0 rgba(0, 0, 0, 0.5);
+  font-family: var(--font-ui);
+  cursor: pointer;
+  animation: dialog-in 160ms ease both;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.dialog.is-closing {
+  animation: dialog-out 200ms ease forwards;
   pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 10px;
-  gap: 8px;
+}
+@keyframes dialog-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
 }
 
-.bottom-name {
-  flex: 1;
+.dialog-speaker {
+  position: absolute;
+  top: -14px;
+  left: 12px;
+  background: #d8a93e;
+  color: #1a1407;
   font-family: var(--font-display);
-  font-size: 10px;
-  color: var(--paper);
-  opacity: 0.6;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 8px;
+  padding: 5px 9px;
   letter-spacing: 0.5px;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45);
 }
 
-.bottom-actions {
+.dialog-text {
+  color: #f1ead6;
+  font-size: 16px;
+  line-height: 1.55;
+  min-height: 3.1em;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
+}
+.dialog-accent {
+  color: var(--accent);
+}
+
+.dialog-caret {
+  color: var(--accent);
+  animation: caret-blink 0.9s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.dialog-hint {
+  position: absolute;
+  right: 10px;
+  bottom: 6px;
+  color: var(--accent);
+  font-size: 13px;
+  opacity: 0;
+}
+.dialog-hint.is-ready {
+  animation: hint-blink 1s steps(1) infinite;
+}
+@keyframes hint-blink {
+  0%,
+  50% {
+    opacity: 0.9;
+  }
+  51%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
+/* ── Нижняя кнопка действия ──────────────────────────────────────────── */
+
+.action-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 30px;
+  z-index: 20;
   display: flex;
-  flex-direction: row;
-  gap: 8px;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Объёмная пиксельная кнопка: светлая фаска сверху, тёмный уступ снизу,
+   жёсткий контур и тень. Заполняется при удержании. */
+.action-btn {
+  pointer-events: auto;
+  position: relative;
+  overflow: hidden;
+  min-width: 72%;
+  padding: 16px 22px 17px;
+  border: none;
+  background: #e7b13e;
+  color: #241c08;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -5px 0 rgba(0, 0, 0, 0.26),
+    0 0 0 3px #14160f,
+    0 8px 0 3px #14160f,
+    0 12px 0 3px rgba(0, 0, 0, 0.45);
+  transition: transform 80ms ease, box-shadow 80ms ease, filter 140ms ease;
+}
+.action-btn.is-holding,
+.action-btn:active:not(.is-locked) {
+  transform: translateY(5px);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.26),
+    0 0 0 3px #14160f,
+    0 3px 0 3px #14160f,
+    0 6px 0 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Заполнение при удержании. */
+.action-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: linear-gradient(90deg, rgba(255, 243, 200, 0), rgba(255, 243, 200, 0.6));
+  box-shadow: inset -3px 0 0 rgba(255, 255, 255, 0.65);
+  transition: width 90ms linear;
+}
+.action-btn.is-holding .action-fill {
+  width: 100%;
+  transition: width var(--hold, 680ms) linear;
+}
+
+.action-label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
   align-items: center;
+  gap: 6px;
+}
+.action-lock {
+  font-size: 11px;
+}
+.action-hint {
+  position: absolute;
+  right: 9px;
+  bottom: 3px;
+  z-index: 1;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: rgba(36, 28, 8, 0.55);
+  pointer-events: none;
 }
 
-.rail-slot {
-  width: 48px;
-  height: 48px;
-  border: 2px solid rgba(244, 241, 232, 0.24);
-  background: rgba(16, 18, 12, 0.5);
-  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.45);
-  flex-shrink: 0;
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.action-btn.is-ready {
+  animation: btn-pulse 1.6s ease-in-out infinite;
+}
+@keyframes btn-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.1);
+  }
 }
 
+.action-btn.is-locked {
+  background: #34372e;
+  color: rgba(244, 241, 232, 0.5);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.3),
+    0 0 0 3px #14160f,
+    0 6px 0 3px #14160f,
+    0 9px 0 3px rgba(0, 0, 0, 0.4);
+  animation: none;
+}
 
+/* ── Подпись ─────────────────────────────────────────────────────────── */
+
+/* ── Переход «закрытие глаза» ────────────────────────────────────────── */
+
+/* Чёрный слой с эллиптическим вырезом-«глазом». Маска: прозрачный эллипс в
+   центре (виден кадр), вокруг — чёрное. Анимируем высоту эллипса: кадр виден
+   в центре дольше всего и закрывается в горизонтальную щель — как веко. */
+.blink {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  overflow: hidden;
+}
+/* Две створки сходятся к центру. Внутренний край чуть скруглён — мягкое веко,
+   но без перебора. */
+.blink-top,
+.blink-bottom {
+  position: absolute;
+  left: -25%;
+  width: 150%;
+  height: 80%;
+  background: #070709;
+}
+.blink-top {
+  top: 0;
+  border-radius: 0 0 50% 50% / 0 0 38% 38%;
+  transform: translateY(-100%);
+}
+.blink-bottom {
+  bottom: 0;
+  border-radius: 50% 50% 0 0 / 38% 38% 0 0;
+  transform: translateY(100%);
+}
+.blink.is-on {
+  pointer-events: auto;
+}
+.blink.is-on .blink-top {
+  animation: lid-top 600ms ease-in-out;
+}
+.blink.is-on .blink-bottom {
+  animation: lid-bottom 600ms ease-in-out;
+}
+@keyframes lid-top {
+  0% {
+    transform: translateY(-100%);
+  }
+  46%,
+  54% {
+    transform: translateY(-8%);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+@keyframes lid-bottom {
+  0% {
+    transform: translateY(100%);
+  }
+  46%,
+  54% {
+    transform: translateY(8%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* ── Меню (дровер) ───────────────────────────────────────────────────── */
 
 .menu-overlay {
   position: absolute;
   inset: 0;
-  z-index: 20;
+  z-index: 50;
   background: rgba(4, 4, 7, 0.55);
   display: flex;
   justify-content: flex-end;
@@ -455,15 +686,32 @@ body {
 .menu-panel {
   position: relative;
   overflow: hidden;
-  width: min(74%, 280px);
+  display: flex;
+  flex-direction: column;
+  width: min(78%, 278px);
   height: 100%;
-
   background: #15170f;
   border-left: 3px solid var(--accent);
-  padding: calc(env(safe-area-inset-top, 0px) + 18px) 18px 18px;
+  padding: 20px 18px;
   animation: slide-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-
+.menu-body {
+  flex: 1;
+  margin-top: 20px;
+  overflow-y: auto;
+}
+.menu-footer {
+  padding-top: 14px;
+  border-top: 1px solid rgba(244, 241, 232, 0.12);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: rgba(244, 241, 232, 0.55);
+}
+.menu-footer b {
+  color: var(--accent);
+  font-weight: 400;
+}
 .menu-panel::before {
   content: '';
   position: absolute;
@@ -480,26 +728,26 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  font-family: var(--font-display);
   font-size: 12px;
   color: var(--paper);
 }
 .menu-close {
-  pointer-events: auto;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   background: transparent;
   border: 2px solid rgba(244, 241, 232, 0.22);
   color: var(--paper);
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
 }
 .menu-close:active {
   transform: translate(1px, 1px);
 }
 .menu-empty {
-  margin-top: 28px;
+  margin-top: 26px;
   color: rgba(244, 241, 232, 0.4);
-  font-size: 16px;
+  font-size: 15px;
 }
 
 @keyframes fade-in {
@@ -516,5 +764,54 @@ body {
   }
   to {
     transform: translateX(0);
+  }
+}
+
+/* ── Дев-панель (вне сцены) ──────────────────────────────────────────── */
+
+.dev-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dev-title {
+  font-family: var(--font-display);
+  font-size: 9px;
+  color: var(--accent);
+}
+.dev-row {
+  display: flex;
+  gap: 6px;
+}
+.dev-block button {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--paper);
+  border: 2px solid rgba(244, 241, 232, 0.18);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  cursor: pointer;
+}
+.dev-block button:active {
+  transform: translate(1px, 1px);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ── Меньше движения ─────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .bg,
+  .oleg,
+  .oleg-shadow,
+  .dust span,
+  .grain,
+  .vignette,
+  .flicker {
+    animation: none;
+  }
+  .oleg-wrap {
+    animation-duration: 1ms;
   }
 }

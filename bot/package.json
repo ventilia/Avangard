@@ -1,0 +1,14 @@
+{
+  "name": "avangard-bot",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Telegram-бот «Рядовой Авангард»: запуск Mini App, прогресс игроков, напоминания.",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types src/index.ts",
+    "start": "node --experimental-strip-types src/index.ts"
+  },
+  "dependencies": {
+    "grammy": "^1.30.0"
+  }
+}

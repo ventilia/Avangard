@@ -1,30 +1,5 @@
-// Данные сцен и спрайты героя.
-// Спрайты 1–7: asset/1.png–7.png. По дефолту активен 7-й (индекс 6).
-// Логика выбора спрайта подключается снаружи через spriteIndex в App.
-
-// ── Спрайты героя ────────────────────────────────────────────────────────────
-
-import sprite1 from './asset/1.png';
-import sprite2 from './asset/2.png';
-import sprite3 from './asset/3.png';
-import sprite4 from './asset/4.png';
-import sprite5 from './asset/5.png';
-import sprite6 from './asset/6.png';
-import sprite7 from './asset/7.png';
-
-// SPRITES[0] = 1.png  …  SPRITES[6] = 7.png
-export const SPRITES = [
-  sprite1,
-  sprite2,
-  sprite3,
-  sprite4,
-  sprite5,
-  sprite6,
-  sprite7,
-] as const;
-
-// 7-й спрайт по дефолту
-export const DEFAULT_SPRITE_INDEX = 6;
+// Данные локаций (фоны) и выбор сцены.
+// Спрайты героя вынесены в game/sprites.ts.
 
 // ── Типы ─────────────────────────────────────────────────────────────────────
 
