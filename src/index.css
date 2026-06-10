@@ -507,6 +507,10 @@ body {
    жёсткий контур и тень. Заполняется при удержании. */
 .action-btn {
     pointer-events: auto;
+    /* Блокируем нативный скролл/зум на тач-устройствах: иначе браузер
+       перехватывает pointerdown и кнопка не реагирует на первое касание. */
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
     position: relative;
     overflow: hidden;
     min-width: 72%;

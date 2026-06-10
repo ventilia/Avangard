@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 
 const HOLD_MS = 680;
+// Один кадр (~16ms) после завершения CSS-анимации — гарантия что браузер
+// успел отрисовать полное заполнение до того как action меняет состояние.
+const AFTER_HOLD_MS = HOLD_MS + 16;
 
 type Props = {
   label: string;
@@ -13,83 +16,72 @@ type Props = {
 
 export function ActionBar({ label, locked, holdMode, busy, onAction, onLockedTap }: Props) {
   const [holding, setHolding] = useState(false);
-  const fillRef = useRef<HTMLSpanElement | null>(null);
-  // Флаг: пользователь удержал до конца, действие ждёт transitionend.
-  const pendingAction = useRef(false);
-  const holdTimer = useRef<number | null>(null);
-  // Сохраняем свежую ссылку на onAction чтобы не пересоздавать listener.
+  const timerRef = useRef<number | null>(null);
+
+  // Актуальные колбэки в ref — не пересоздаём таймер при каждом рендере.
   const onActionRef = useRef(onAction);
+  const onLockedTapRef = useRef(onLockedTap);
   useEffect(() => { onActionRef.current = onAction; });
+  useEffect(() => { onLockedTapRef.current = onLockedTap; });
 
   const clearTimer = () => {
-    if (holdTimer.current) {
-      clearTimeout(holdTimer.current);
-      holdTimer.current = null;
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   };
 
+  // Чистим при размонтировании.
   useEffect(() => () => clearTimer(), []);
 
-  // Listener на transitionend живёт всё время монтирования компонента.
-  // Стреляет только когда pendingAction.current = true (удержание завершено).
+  // Сбрасываем holding если компонент перешёл в busy/locked/!holdMode.
   useEffect(() => {
-    const el = fillRef.current;
-    if (!el) return;
-
-    function onEnd(e: TransitionEvent) {
-      if (e.propertyName !== 'width') return;
-      if (!pendingAction.current) return;
-
-      // Транзиция width завершилась и это было нужное удержание.
-      pendingAction.current = false;
+    if (busy || locked || !holdMode) {
+      clearTimer();
       setHolding(false);
-      onActionRef.current();
     }
-
-    el.addEventListener('transitionend', onEnd);
-    return () => el.removeEventListener('transitionend', onEnd);
-    // Монтируется один раз; onActionRef - ref, не зависимость.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [busy, locked, holdMode]);
 
   function down(e: PointerEvent) {
     e.preventDefault();
     if (busy) return;
+
     if (locked) {
-      onLockedTap();
-      return;
-    }
-    if (!holdMode) {
-      onAction();
+      onLockedTapRef.current();
       return;
     }
 
-    pendingAction.current = false;
+    if (!holdMode) {
+      // Пена — немедленное действие по касанию, без hold.
+      onActionRef.current();
+      return;
+    }
+
+    clearTimer();
     setHolding(true);
 
-    // По истечении HOLD_MS помечаем что ждём transitionend.
-    // CSS transition(width) на is-holding займёт ровно HOLD_MS и завершится
-    // примерно в этот же момент — transitionend придёт чуть позже, это и есть
-    // нужная нам точка.
-    holdTimer.current = window.setTimeout(() => {
-      holdTimer.current = null;
-      pendingAction.current = true;
-      // Не трогаем holding — is-holding остаётся, ширина 100%, transition идёт.
-    }, HOLD_MS);
+    // Таймер срабатывает через HOLD_MS + один кадр.
+    // К этому моменту CSS width:100% transition(HOLD_MS) точно завершена
+    // и браузер её отрисовал — пользователь видит полное заполнение.
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null;
+      setHolding(false);
+      onActionRef.current();
+    }, AFTER_HOLD_MS);
   }
 
   function up() {
-    // Палец отпущен до конца — отменяем.
+    // Палец отпущен — отмена.
     clearTimer();
-    pendingAction.current = false;
     setHolding(false);
   }
 
-  const cls =
-      'action-btn' +
-      (locked ? ' is-locked' : '') +
-      (holding ? ' is-holding' : '') +
-      (!locked && !busy ? ' is-ready' : '');
+  const cls = [
+    'action-btn',
+    locked && 'is-locked',
+    holding && 'is-holding',
+    !locked && !busy && 'is-ready',
+  ].filter(Boolean).join(' ');
 
   return (
       <div className="action-bar">
@@ -102,9 +94,7 @@ export function ActionBar({ label, locked, holdMode, busy, onAction, onLockedTap
             onPointerCancel={up}
             disabled={busy}
         >
-          {holdMode && !locked && (
-              <span ref={fillRef} className="action-fill" aria-hidden />
-          )}
+          {holdMode && !locked && <span className="action-fill" aria-hidden />}
           <span className="action-label">{label}</span>
           {holdMode && !locked && <span className="action-hint">удерживай</span>}
         </button>

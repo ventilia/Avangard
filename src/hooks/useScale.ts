@@ -10,8 +10,8 @@ import { getViewportSize, onViewportChange } from '../telegram';
 
 // Насколько контент может отклониться от идеального масштаба (15%).
 // Пример: экран 390×844 (iPhone 14) vs базовый 405×720 — разница ~4%, поля не нужны.
-// Экран 1280×800 (десктоп широкий) — разница большая, поля уместны.
-const STRETCH_LIMIT = 0.15;
+// Экран 1280×800 (десктоп широкий) — разница > 25%, тогда поля.
+const STRETCH_LIMIT = 0.30;
 
 export function useScale(baseW: number, baseH: number): number {
   const calc = (): number => {
