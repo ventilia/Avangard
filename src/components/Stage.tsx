@@ -19,7 +19,7 @@ export function Stage({ bg, children }: Props) {
       <div className="frame-bg" style={{ backgroundImage: `url("${bg}")` }} aria-hidden />
       <div
         className="stage"
-        style={{ width: BASE_W, height: BASE_H, transform: `scale(${scale})` }}
+        style={{ width: BASE_W, height: BASE_H, transform: `scale(${scale.x}, ${scale.y})` }}
       >
         {children}
       </div>

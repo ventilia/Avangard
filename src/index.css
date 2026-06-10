@@ -646,33 +646,49 @@ body {
 .blink.is-on {
     pointer-events: auto;
 }
-.blink.is-on .blink-top {
-    animation: lid-top 600ms ease-in-out;
+/* Смыкание (closing): по завершении меняется спрайт (animationend).
+   forwards удерживает створки сомкнутыми до старта раскрытия — без зазора. */
+.blink.is-closing .blink-top {
+    animation: lid-close-top 260ms ease-in forwards;
 }
-.blink.is-on .blink-bottom {
-    animation: lid-bottom 600ms ease-in-out;
+.blink.is-closing .blink-bottom {
+    animation: lid-close-bottom 260ms ease-in forwards;
 }
-@keyframes lid-top {
-    0% {
+.blink.is-opening .blink-top {
+    animation: lid-open-top 300ms ease-out forwards;
+}
+.blink.is-opening .blink-bottom {
+    animation: lid-open-bottom 300ms ease-out forwards;
+}
+@keyframes lid-close-top {
+    from {
         transform: translateY(-100%);
     }
-    46%,
-    54% {
+    to {
         transform: translateY(-8%);
     }
-    100% {
+}
+@keyframes lid-close-bottom {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(8%);
+    }
+}
+@keyframes lid-open-top {
+    from {
+        transform: translateY(-8%);
+    }
+    to {
         transform: translateY(-100%);
     }
 }
-@keyframes lid-bottom {
-    0% {
-        transform: translateY(100%);
-    }
-    46%,
-    54% {
+@keyframes lid-open-bottom {
+    from {
         transform: translateY(8%);
     }
-    100% {
+    to {
         transform: translateY(100%);
     }
 }

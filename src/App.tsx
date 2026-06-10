@@ -66,7 +66,11 @@ export function App() {
                 onLockedTap={game.tapLocked}
             />
 
-            <BlinkOverlay active={game.blinking} />
+            <BlinkOverlay
+                phase={game.blinkPhase}
+                onClosed={game.handleBlinkClosed}
+                onOpened={game.handleBlinkOpened}
+            />
 
             {menuOpen && (
                 <Menu

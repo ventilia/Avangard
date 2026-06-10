@@ -1,26 +1,27 @@
 // Хук-оркестратор: связывает чистое ядро (reducer/селекторы) с React,
 // управляет переходом «закрытие глаза» (blink) и показом диалогов.
+//
+// Переход управляется СОБЫТИЯМИ анимации, а не таймерами: спрайт меняется
+// ровно когда веки сомкнулись (animationend фазы closing). На мобильных
+// таймеры плывут — событийная модель надёжнее.
 
 import { useEffect, useReducer, useRef, useState } from 'react';
-import {
-  computeDay,
-  isShaveable,
-  loadState,
-  reducer,
-  saveState,
-  spriteFor,
-} from './gameState';
+import { computeDay, isShaveable, loadState, reducer, saveState, spriteFor } from './gameState';
 import { DIALOGUES, pickRandom, type Script } from './dialogues';
 
-// Тайминги перехода-моргания (мс). Смена спрайта — в момент «закрытых глаз».
-const BLINK_CLOSE = 260;
-const BLINK_OPEN = 300;
+export type BlinkPhase = 'idle' | 'closing' | 'opening';
+
+// Страховка на случай, если animationend не придёт (reduced-motion / сбой).
+const BLINK_SAFETY_MS = 700;
 
 export function useGame() {
   const [state, dispatch] = useReducer(reducer, undefined, loadState);
-  const [blinking, setBlinking] = useState(false);
+  const [blinkPhase, setBlinkPhase] = useState<BlinkPhase>('idle');
   const [dialog, setDialog] = useState<Script | null>(null);
-  const timers = useRef<number[]>([]);
+  // Действие, которое применяется в момент полного смыкания век.
+  const pendingMid = useRef<(() => void) | null>(null);
+
+  const blinking = blinkPhase !== 'idle';
 
   // Персист при каждом изменении.
   useEffect(() => saveState(state), [state]);
@@ -32,29 +33,49 @@ export function useGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Чистим таймеры при размонтировании.
-  useEffect(() => () => timers.current.forEach((t) => clearTimeout(t)), []);
-
   const day = computeDay(state);
   const shaveable = isShaveable(state, day);
   const sprite = spriteFor(state, day);
 
-  // Запускает «моргание»: mid() вызывается, когда глаз закрыт (смена спрайта).
-  function blink(mid: () => void) {
-    if (blinking) return;
-    setBlinking(true);
-    timers.current.push(window.setTimeout(mid, BLINK_CLOSE));
-    timers.current.push(window.setTimeout(() => setBlinking(false), BLINK_CLOSE + BLINK_OPEN));
+  // Веки сомкнулись → применяем изменение и начинаем раскрытие.
+  function handleBlinkClosed() {
+    if (blinkPhase !== 'closing') return;
+    pendingMid.current?.();
+    pendingMid.current = null;
+    setBlinkPhase('opening');
   }
 
-  // Действие бритья (вызывается по завершении удержания кнопки).
-  // Предполагает, что бритьё доступно (foam → half → clean).
+  // Веки раскрылись → переход завершён.
+  function handleBlinkOpened() {
+    if (blinkPhase !== 'opening') return;
+    setBlinkPhase('idle');
+  }
+
+  // Страховочный таймер: если событие анимации не пришло — двигаем фазу сами.
+  useEffect(() => {
+    if (blinkPhase === 'idle') return;
+    const t = window.setTimeout(() => {
+      if (blinkPhase === 'closing') handleBlinkClosed();
+      else handleBlinkOpened();
+    }, BLINK_SAFETY_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blinkPhase]);
+
+  // Запускает переход: mid применится в момент закрытых век.
+  function startBlink(mid: () => void) {
+    if (blinking) return;
+    pendingMid.current = mid;
+    setBlinkPhase('closing');
+  }
+
+  // Действие бритья (по завершении удержания кнопки): foam → half → clean.
   function act() {
     if (blinking) return;
     setDialog(null); // убираем открытый диалог на время действия
 
     if (state.shaveStage === 'none') {
-      blink(() => dispatch({ type: 'FOAM' }));
+      startBlink(() => dispatch({ type: 'FOAM' }));
       return;
     }
 
@@ -62,7 +83,7 @@ export function useGame() {
     const wasOnboarding = !state.onboarded;
     // Вариант half-спрайта выбираем здесь (вне редьюсера) — честный рандом.
     const halfVariant: 0 | 1 = Math.random() < 0.5 ? 0 : 1;
-    blink(() => {
+    startBlink(() => {
       dispatch({ type: 'SHAVE', halfVariant });
       if (fromHalf) {
         setDialog(wasOnboarding ? DIALOGUES.firstShaved : pickRandom(DIALOGUES.shaved));
@@ -89,5 +110,19 @@ export function useGame() {
     },
   };
 
-  return { state, day, shaveable, sprite, blinking, dialog, setDialog, act, tapLocked, dev };
+  return {
+    state,
+    day,
+    shaveable,
+    sprite,
+    blinking,
+    blinkPhase,
+    handleBlinkClosed,
+    handleBlinkOpened,
+    dialog,
+    setDialog,
+    act,
+    tapLocked,
+    dev,
+  };
 }

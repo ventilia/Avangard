@@ -1,40 +1,33 @@
-// Расчёт масштаба letterbox: вписываем опорный блок baseW×baseH в текущий
-// вьюпорт, сохраняя пропорции. Источник размеров — Telegram (если есть) или окно.
-//
-// «Мягкий» режим: контент может немного растягиваться/сжиматься вместо
-// немедленного появления полей. Поля появляются только при сильном расхождении
-// соотношений сторон (> STRETCH_LIMIT). Это убирает полосы на большинстве телефонов.
+// Масштабирование сцены под вьюпорт.
+// Контент тянется неравномерно (X и Y отдельно), чтобы заполнить экран. Лёгкое
+// искажение допустимо. Если соотношения сторон расходятся слишком сильно —
+// растяжение ограничивается, и по «лишней» оси появляются (мягкие) поля.
 
 import { useEffect, useState } from 'react';
 import { getViewportSize, onViewportChange } from '../telegram';
 
-// Насколько контент может отклониться от идеального масштаба (15%).
-// Пример: экран 390×844 (iPhone 14) vs базовый 405×720 — разница ~4%, поля не нужны.
-// Экран 1280×800 (десктоп широкий) — разница > 25%, тогда поля.
-const STRETCH_LIMIT = 0.30;
+export type Scale = { x: number; y: number };
 
-export function useScale(baseW: number, baseH: number): number {
-  const calc = (): number => {
+// До скольки одна ось может быть крупнее другой, прежде чем включатся поля.
+// 0.18 = до 18% непропорционального растяжения. Больше — меньше полей,
+// но сильнее искажение фигуры.
+const MAX_STRETCH = 0.18;
+
+export function useScale(baseW: number, baseH: number): Scale {
+  const calc = (): Scale => {
     const { w, h } = getViewportSize();
+    let x = w / baseW;
+    let y = h / baseH;
 
-    // Масштаб по каждой оси: насколько нужно увеличить/уменьшить базовый блок.
-    const scaleX = w / baseW;
-    const scaleY = h / baseH;
+    // Ограничиваем перекос: ни одна ось не крупнее другой более чем в (1+T) раз.
+    const max = 1 + MAX_STRETCH;
+    if (x > y * max) x = y * max; // слишком широко → поля по бокам
+    else if (y > x * max) y = x * max; // слишком высоко → поля сверху/снизу
 
-    // Строгий letterbox (вписать без обрезки): меньший из двух.
-    const strict = Math.min(scaleX, scaleY);
-
-    // «Мягкий»: берём геометрическое среднее — компромисс между осями.
-    // Контент чуть выходит за пределы по одной оси, но поля минимальны.
-    const soft = Math.sqrt(scaleX * scaleY);
-
-    // Если мягкий масштаб не выходит за допуск от строгого — используем его.
-    // Иначе ограничиваем: строгий + не более STRETCH_LIMIT относительно него.
-    const maxSoft = strict * (1 + STRETCH_LIMIT);
-    return Math.min(soft, maxSoft);
+    return { x, y };
   };
 
-  const [scale, setScale] = useState(calc);
+  const [scale, setScale] = useState<Scale>(calc);
 
   useEffect(() => {
     const update = () => setScale(calc());
