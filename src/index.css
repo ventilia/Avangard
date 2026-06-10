@@ -44,8 +44,8 @@ body {
     inset: 0;
     background-size: cover;
     background-position: center;
-    filter: blur(34px) brightness(0.34) saturate(0.85);
-    transform: scale(1.18);
+    filter: blur(22px) brightness(0.34) saturate(0.85);
+    transform: scale(1.14);
     pointer-events: none;
 }
 

@@ -1,8 +1,8 @@
-// Letterbox-контейнер: фиксированный блок 9:16 масштабируется под вьюпорт
-// единым transform: scale(). Поля заполняются размытой сценой — на телефоне
-// их почти не видно, на десктопе получается кинематографичная рамка.
+// Контейнер сцены: опорный блок BASE_W×BASE_H заполняет реальный размер рамки
+// неравномерным transform: scale(). Поля (при сильном расхождении пропорций)
+// заполняются размытой сценой.
 
-import { type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { useScale } from '../hooks/useScale';
 import { BASE_H, BASE_W } from '../game/types';
 
@@ -12,10 +12,11 @@ type Props = {
 };
 
 export function Stage({ bg, children }: Props) {
-  const scale = useScale(BASE_W, BASE_H);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const scale = useScale(frameRef, BASE_W, BASE_H);
 
   return (
-    <div className="frame">
+    <div className="frame" ref={frameRef}>
       <div className="frame-bg" style={{ backgroundImage: `url("${bg}")` }} aria-hidden />
       <div
         className="stage"
