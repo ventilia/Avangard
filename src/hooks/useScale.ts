@@ -1,29 +1,28 @@
 // Масштабирование сцены под РЕАЛЬНЫЙ размер видимого контейнера.
 //
-// Меряем сам элемент-рамку через ResizeObserver, а не window/Telegram-вьюпорт:
-// в TG viewportStableHeight/innerHeight могут врать (меньше реального окна) —
-// из-за этого появлялись поля. Размер DOM-элемента — источник правды.
+// Цель: по умолчанию ПОЛНОСТЬЮ заполнять пространство (без полей), даже ценой
+// лёгкого непропорционального растяжения. Поля появляются только при сильном
+// расхождении пропорций (очень широкие/узкие экраны) и заполняются размытой
+// сценой.
 //
-// Контент тянется неравномерно (X и Y отдельно), чтобы заполнить экран; лёгкое
-// искажение допустимо. При сильном расхождении пропорций растяжение
-// ограничивается, и по «лишней» оси появляются (мягкие) поля.
+// Размер берём ResizeObserver-ом с самого элемента-рамки, а НЕ из
+// window/Telegram-вьюпорта: viewportStableHeight в TG меньше реального окна и
+// давал поля. Размер DOM-элемента — источник правды.
 
 import { useLayoutEffect, useState, type RefObject } from 'react';
 import { onViewportChange } from '../telegram';
 
-export type Scale = { x: number; y: number };
+// scale + смещение центрирования (ненулевое только когда появляются поля).
+export type Scale = { x: number; y: number; ox: number; oy: number };
 
 // До скольки одна ось может быть крупнее другой, прежде чем включатся поля.
-// 0.22 = до 22% непропорционального растяжения (большинство телефонов
-// дозаполняются полностью). Больше — меньше полей, но сильнее искажение.
-const MAX_STRETCH = 0.22;
+// 0.45 = до 45% непропорционального растяжения. Телефоны и окно TG (они выше
+// по пропорции, чем 9:16) заполняются полностью; поля — только на экстремально
+// широких/узких экранах. Больше — меньше полей, но сильнее искажение фигуры.
+const MAX_STRETCH = 0.45;
 
-export function useScale(
-  ref: RefObject<HTMLElement | null>,
-  baseW: number,
-  baseH: number,
-): Scale {
-  const [scale, setScale] = useState<Scale>({ x: 1, y: 1 });
+export function useScale(ref: RefObject<HTMLElement | null>, baseW: number, baseH: number): Scale {
+  const [scale, setScale] = useState<Scale>({ x: 1, y: 1, ox: 0, oy: 0 });
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -37,11 +36,19 @@ export function useScale(
       let x = w / baseW;
       let y = h / baseH;
 
+      // Ограничиваем перекос. По умолчанию (в пределах допуска) — точное
+      // заполнение: x=w/baseW, y=h/baseH, поля нулевые.
       const max = 1 + MAX_STRETCH;
       if (x > y * max) x = y * max; // слишком широко → поля по бокам
       else if (y > x * max) y = x * max; // слишком высоко → поля сверху/снизу
 
-      setScale((prev) => (prev.x === x && prev.y === y ? prev : { x, y }));
+      // Центрируем по «лишней» оси (если поля появились).
+      const ox = (w - baseW * x) / 2;
+      const oy = (h - baseH * y) / 2;
+
+      setScale((p) =>
+        p.x === x && p.y === y && p.ox === ox && p.oy === oy ? p : { x, y, ox, oy },
+      );
     };
 
     calc();

@@ -32,8 +32,6 @@ body {
 .frame {
     position: fixed;
     inset: 0;
-    display: grid;
-    place-items: center;
     overflow: hidden;
     background: #000;
 }
@@ -52,9 +50,11 @@ body {
 /* Опорный блок 9:16. Размеры задаются инлайном (BASE_W×BASE_H),
    transform: scale() — снаружи. Всё внутри верстается в этих px. */
 .stage {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     overflow: hidden;
-    transform-origin: center center;
+    transform-origin: top left;
     background: var(--void);
     -webkit-user-select: none;
     user-select: none;
