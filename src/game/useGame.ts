@@ -22,6 +22,11 @@ function applyName(script: Script, name: string): Script {
   return { ...script, pages: script.pages.map((p) => p.split('{name}').join(name)) };
 }
 
+// Реплика с уже подставленным именем игрока.
+function named(script: Script): Script {
+  return applyName(script, getUserName());
+}
+
 export function useGame() {
   const [state, dispatch] = useReducer(reducer, undefined, loadState);
   const [blinkPhase, setBlinkPhase] = useState<BlinkPhase>('idle');
@@ -36,7 +41,7 @@ export function useGame() {
 
   // Приветствие при первом запуске.
   useEffect(() => {
-    if (!state.onboarded && state.shaveStage === 'none') setDialog(DIALOGUES.greet);
+    if (!state.onboarded && state.shaveStage === 'none') setDialog(named(DIALOGUES.greet));
     // только при монтировании
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -98,7 +103,7 @@ export function useGame() {
     startBlink(() => {
       dispatch({ type: 'SHAVE', halfVariant });
       if (fromHalf) {
-        setDialog(wasOnboarding ? DIALOGUES.firstShaved : pickRandom(DIALOGUES.shaved));
+        setDialog(named(wasOnboarding ? DIALOGUES.firstShaved : pickRandom(DIALOGUES.shaved)));
       }
     });
   }
@@ -106,13 +111,13 @@ export function useGame() {
   // Тап по заблокированной кнопке (ещё рано бриться) — просто реплика.
   function tapLocked() {
     if (blinking) return;
-    setDialog(pickRandom(DIALOGUES.tooEarly));
+    setDialog(named(pickRandom(DIALOGUES.tooEarly)));
   }
 
   // Тап по самому Олегу → случайная реплика с именем игрока.
   function tapOleg() {
     if (blinking || dialog) return;
-    setDialog(applyName(pickRandom(DIALOGUES.taps), getUserName()));
+    setDialog(named(pickRandom(DIALOGUES.taps)));
   }
 
   // Дев-режим.
@@ -120,11 +125,11 @@ export function useGame() {
     setDay: (d: number) => dispatch({ type: 'DEV_SET_DAY', day: d }),
     setOnboarded: (v: boolean) => {
       dispatch({ type: 'DEV_SET_ONBOARDED', value: v });
-      if (!v) setDialog(DIALOGUES.greet);
+      if (!v) setDialog(named(DIALOGUES.greet));
     },
     reset: () => {
       dispatch({ type: 'DEV_RESET' });
-      setDialog(DIALOGUES.greet);
+      setDialog(named(DIALOGUES.greet));
     },
     // Тест таймера дембеля.
     serviceBeforeCall: () =>
