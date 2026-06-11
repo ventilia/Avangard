@@ -11,6 +11,7 @@ type TgWebApp = {
   viewportStableHeight?: number;
   onEvent?: (event: string, cb: () => void) => void;
   offEvent?: (event: string, cb: () => void) => void;
+  initDataUnsafe?: { user?: { first_name?: string; username?: string } };
 };
 
 declare global {
@@ -50,4 +51,10 @@ export function onViewportChange(cb: () => void): () => void {
   const app = tg();
   app?.onEvent?.('viewportChanged', cb);
   return () => app?.offEvent?.('viewportChanged', cb);
+}
+
+// Имя игрока из Telegram. Вне Telegram (или если имени нет) — «боец».
+export function getUserName(): string {
+  const name = tg()?.initDataUnsafe?.user?.first_name?.trim();
+  return name || 'боец';
 }

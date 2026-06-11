@@ -1,10 +1,15 @@
+// Дев-инструменты (живут внутри меню): быстрая прокрутка состояния для тестов.
 
 import { MAX_DAY } from '../game/types';
 
-type Dev = {
+export type Dev = {
   setDay: (d: number) => void;
   setOnboarded: (v: boolean) => void;
   reset: () => void;
+  serviceBeforeCall: () => void;
+  serviceCallNow: () => void;
+  serviceDemobSoon: () => void;
+  serviceReset: () => void;
 };
 
 type Props = {
@@ -27,6 +32,16 @@ export function DevPanel({ day, onboarded, dev, onNewScene }: Props) {
         <button onClick={() => dev.setOnboarded(false)}>онбординг</button>
         <button onClick={dev.reset}>сброс</button>
         <button onClick={onNewScene}>фон</button>
+      </div>
+
+      <div className="dev-title">срок службы</div>
+      <div className="dev-row">
+        <button onClick={dev.serviceBeforeCall}>до призыва</button>
+        <button onClick={dev.serviceCallNow}>призыв</button>
+      </div>
+      <div className="dev-row">
+        <button onClick={dev.serviceDemobSoon}>дембель 1м</button>
+        <button onClick={dev.serviceReset}>сброс срока</button>
       </div>
     </div>
   );

@@ -12,6 +12,8 @@ export const initialState: GameState = {
   shaveStage: 'none',
   halfVariant: 0,
   devDay: null,
+  devServiceStart: null,
+  devServiceEnd: null,
 };
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
@@ -77,6 +79,13 @@ export function reducer(state: GameState, action: GameAction): GameState {
         shaveStage: 'none',
         devDay: null,
         lastShaveAt: action.value ? Date.now() : null,
+      };
+
+    case 'DEV_SET_SERVICE':
+      return {
+        ...state,
+        devServiceStart: action.start !== undefined ? action.start : state.devServiceStart,
+        devServiceEnd: action.end !== undefined ? action.end : state.devServiceEnd,
       };
 
     case 'DEV_RESET':

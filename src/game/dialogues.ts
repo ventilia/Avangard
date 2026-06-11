@@ -41,6 +41,17 @@ export const DIALOGUES = {
     { speaker: 'Олег', pages: ['Не гони. Побреемся, как *зарастёт*.'] },
     { speaker: 'Олег', pages: ['Дай хоть *щетине* появиться, боец.'] },
   ] as Script[],
+
+  // Реплики по тапу по Олегу. {name} подставляется именем игрока.
+  taps: [
+    { speaker: 'Олег', pages: ['Здарова, *{name}*! Как сам?'] },
+    { speaker: 'Олег', pages: ['Чё толкаешься, боец?'] },
+    { speaker: 'Олег', pages: ['Старшина увидит — влетит обоим.'] },
+    { speaker: 'Олег', pages: ['*{name}*, лучше бы бритву нёс.'] },
+    { speaker: 'Олег', pages: ['Щекотно же! Хорош.'] },
+    { speaker: 'Олег', pages: ['Тут вам не зоопарк, рядовой.'] },
+    { speaker: 'Олег', pages: ['Скучаешь по мне, *{name}*? Я тоже.'] },
+  ] as Script[],
 } satisfies Record<string, Script | Script[]>;
 
 export function pickRandom<T>(arr: readonly T[]): T {

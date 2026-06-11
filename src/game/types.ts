@@ -15,6 +15,8 @@ export type GameState = {
   shaveStage: ShaveStage;
   halfVariant: 0 | 1;
   devDay: number | null;
+  devServiceStart: number | null; // дев-оверрайд старта службы (ts)
+  devServiceEnd: number | null; // дев-оверрайд дембеля (ts)
 };
 
 export type GameAction =
@@ -22,4 +24,5 @@ export type GameAction =
   | { type: 'SHAVE'; halfVariant?: 0 | 1 }
   | { type: 'DEV_SET_DAY'; day: number }
   | { type: 'DEV_SET_ONBOARDED'; value: boolean }
+  | { type: 'DEV_SET_SERVICE'; start?: number | null; end?: number | null }
   | { type: 'DEV_RESET' };

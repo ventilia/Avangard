@@ -8,11 +8,19 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { computeDay, isShaveable, loadState, reducer, saveState, spriteFor } from './gameState';
 import { DIALOGUES, pickRandom, type Script } from './dialogues';
+import { DAY_MS } from './types';
+import { DEFAULT_SERVICE_END, DEFAULT_SERVICE_START } from './service';
+import { getUserName } from '../telegram';
 
 export type BlinkPhase = 'idle' | 'closing' | 'opening';
 
 // Страховка на случай, если animationend не придёт (reduced-motion / сбой).
 const BLINK_SAFETY_MS = 700;
+
+// Подставляем имя игрока в плейсхолдер {name}.
+function applyName(script: Script, name: string): Script {
+  return { ...script, pages: script.pages.map((p) => p.split('{name}').join(name)) };
+}
 
 export function useGame() {
   const [state, dispatch] = useReducer(reducer, undefined, loadState);
@@ -36,6 +44,10 @@ export function useGame() {
   const day = computeDay(state);
   const shaveable = isShaveable(state, day);
   const sprite = spriteFor(state, day);
+
+  // Срок службы (с дев-оверрайдами).
+  const serviceStart = state.devServiceStart ?? DEFAULT_SERVICE_START;
+  const serviceEnd = state.devServiceEnd ?? DEFAULT_SERVICE_END;
 
   // Веки сомкнулись → применяем изменение и начинаем раскрытие.
   function handleBlinkClosed() {
@@ -97,6 +109,12 @@ export function useGame() {
     setDialog(pickRandom(DIALOGUES.tooEarly));
   }
 
+  // Тап по самому Олегу → случайная реплика с именем игрока.
+  function tapOleg() {
+    if (blinking || dialog) return;
+    setDialog(applyName(pickRandom(DIALOGUES.taps), getUserName()));
+  }
+
   // Дев-режим.
   const dev = {
     setDay: (d: number) => dispatch({ type: 'DEV_SET_DAY', day: d }),
@@ -108,6 +126,14 @@ export function useGame() {
       dispatch({ type: 'DEV_RESET' });
       setDialog(DIALOGUES.greet);
     },
+    // Тест таймера дембеля.
+    serviceBeforeCall: () =>
+      dispatch({ type: 'DEV_SET_SERVICE', start: Date.now() + 7 * DAY_MS, end: Date.now() + 372 * DAY_MS }),
+    serviceCallNow: () =>
+      dispatch({ type: 'DEV_SET_SERVICE', start: Date.now() - 1000, end: DEFAULT_SERVICE_END }),
+    serviceDemobSoon: () =>
+      dispatch({ type: 'DEV_SET_SERVICE', start: Date.now() - DAY_MS, end: Date.now() + 60_000 }),
+    serviceReset: () => dispatch({ type: 'DEV_SET_SERVICE', start: null, end: null }),
   };
 
   return {
@@ -123,6 +149,9 @@ export function useGame() {
     setDialog,
     act,
     tapLocked,
+    tapOleg,
+    serviceStart,
+    serviceEnd,
     dev,
   };
 }

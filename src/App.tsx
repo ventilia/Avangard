@@ -73,7 +73,7 @@ export function App() {
     return (
         <Stage bg={scene.src}>
             <Scene src={scene.src} />
-            <Oleg src={game.sprite} placement={scene.oleg} />
+            <Oleg src={game.sprite} placement={scene.oleg} onTap={game.tapOleg} />
             <div className="foot-fade" aria-hidden />
             <Atmosphere />
 
@@ -108,6 +108,8 @@ export function App() {
                     isDev={IS_DEV}
                     day={game.day}
                     onboarded={game.state.onboarded}
+                    serviceStart={game.serviceStart}
+                    serviceEnd={game.serviceEnd}
                     dev={game.dev}
                     onNewScene={() => setScene(pickScene())}
                 />
