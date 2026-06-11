@@ -23,7 +23,7 @@ const IS_DEV =
     !!(window.Telegram?.WebApp);
 
 // Минимальное время показа лоадера — чтобы при кеше он не «моргал».
-const MIN_LOADER_MS = 4000;
+const MIN_LOADER_MS = 400;
 
 export function App() {
     const [scene, setScene] = useState(pickScene);
