@@ -18,6 +18,9 @@ export const SPRITES = [sprite1, sprite2, sprite3, sprite4, sprite5, sprite6, sp
 export const FOAM = foam;
 export const HALVES = [half1, half2] as const;
 
+// Всё, что нужно предзагрузить, чтобы смена спрайта была мгновенной.
+export const PRELOAD_SPRITES: readonly string[] = [...SPRITES, FOAM, ...HALVES];
+
 
 export const UNSHAVEN = SPRITES[MAX_DAY - 1];
 
