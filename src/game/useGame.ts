@@ -11,6 +11,7 @@ import { DIALOGUES, pickRandom, type Script } from './dialogues';
 import { DAY_MS } from './types';
 import { DEFAULT_SERVICE_END, DEFAULT_SERVICE_START } from './service';
 import { getUserName } from '../telegram';
+import { isSyncEnabled, syncProgress } from '../api';
 
 export type BlinkPhase = 'idle' | 'closing' | 'opening';
 
@@ -38,6 +39,28 @@ export function useGame() {
 
   // Персист при каждом изменении.
   useEffect(() => saveState(state), [state]);
+
+  // Синхронизация с сервером (только если включена: есть env + Telegram).
+  // Загрузка серверного прогресса при старте.
+  useEffect(() => {
+    if (!isSyncEnabled()) return;
+    let cancelled = false;
+    syncProgress().then((server) => {
+      if (!cancelled && server) {
+        dispatch({ type: 'HYDRATE', onboarded: server.onboarded, lastShaveAt: server.lastShaveAt });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Сохранение прогресса на сервер при изменении ключевых полей.
+  useEffect(() => {
+    if (!isSyncEnabled()) return;
+    void syncProgress({ onboarded: state.onboarded, lastShaveAt: state.lastShaveAt, streak: 0 });
+  }, [state.onboarded, state.lastShaveAt]);
 
   // Приветствие при первом запуске.
   useEffect(() => {

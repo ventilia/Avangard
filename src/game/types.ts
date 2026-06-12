@@ -22,6 +22,7 @@ export type GameState = {
 export type GameAction =
   | { type: 'FOAM' }
   | { type: 'SHAVE'; halfVariant?: 0 | 1 }
+  | { type: 'HYDRATE'; onboarded: boolean; lastShaveAt: number | null } // прогресс с сервера
   | { type: 'DEV_SET_DAY'; day: number }
   | { type: 'DEV_SET_ONBOARDED'; value: boolean }
   | { type: 'DEV_SET_SERVICE'; start?: number | null; end?: number | null }

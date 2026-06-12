@@ -11,6 +11,7 @@ type TgWebApp = {
   viewportStableHeight?: number;
   onEvent?: (event: string, cb: () => void) => void;
   offEvent?: (event: string, cb: () => void) => void;
+  initData?: string;
   initDataUnsafe?: { user?: { first_name?: string; username?: string } };
 };
 
@@ -57,4 +58,9 @@ export function onViewportChange(cb: () => void): () => void {
 export function getUserName(): string {
   const name = tg()?.initDataUnsafe?.user?.first_name?.trim();
   return name || 'боец';
+}
+
+// Подписанная строка initData (для валидации на бэкенде). Вне TG — пусто.
+export function getInitData(): string {
+  return tg()?.initData ?? '';
 }

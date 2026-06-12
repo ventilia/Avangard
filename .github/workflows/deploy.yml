@@ -37,7 +37,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # vite build соберёт статику в dist/ (тип-чек не запускаем — он не нужен для сборки).
+      # VITE_* вшиваются в сборку — задай их в репо: Settings → Secrets → Actions.
       - run: pnpm build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - uses: actions/configure-pages@v5
 

@@ -81,6 +81,12 @@ export function reducer(state: GameState, action: GameAction): GameState {
         lastShaveAt: action.value ? Date.now() : null,
       };
 
+    case 'HYDRATE': {
+      // Берём более продвинутое состояние (позже побрился = max ts).
+      const lastShaveAt = Math.max(state.lastShaveAt ?? 0, action.lastShaveAt ?? 0) || null;
+      return { ...state, onboarded: state.onboarded || action.onboarded, lastShaveAt };
+    }
+
     case 'DEV_SET_SERVICE':
       return {
         ...state,
