@@ -282,3 +282,30 @@ export function useGame() {
       SFX.bootsAlert(soundOn);
       setDialog(named(pickRandom(DIALOGUES.bootsRequest)));
     },
+    toggleSound: () => dispatch({ type: 'TOGGLE_SOUND' }),
+  };
+
+  return {
+    state,
+    day,
+    shaveable,
+    sprite,
+    blinking,
+    blinkPhase,
+    handleBlinkClosed,
+    handleBlinkOpened,
+    dialog,
+    closeDialog,
+    act,
+    tapLocked,
+    tapOleg,
+    tapStreak,
+    bootsMode,
+    bootsKey,
+    startBootCleaning,
+    finishBootCleaning,
+    serviceStart,
+    serviceEnd,
+    dev,
+  };
+}
