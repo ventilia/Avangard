@@ -1,10 +1,10 @@
 // Edge-функция Supabase: синхронизация прогресса игрока.
-// Проверяет подпись Telegram initData (HMAC по токену бота) — поэтому ей можно
-// доверять user.id, — затем мёржит и сохраняет прогресс в таблицу players.
+// Оптимизирована под минимальную нагрузку:
+//  - SELECT → если данные не новее клиентских, просто возвращаем cached-данные без UPDATE.
+//  - Upsert только когда есть реальный прирост (lastShaveAt увеличился или onboarded стал true).
 //
 // Деплой: supabase functions deploy sync
 // Секрет:  supabase secrets set BOT_TOKEN=...
-// (SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY Supabase подставляет сам.)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -22,15 +22,12 @@ function json(obj: unknown, status = 200): Response {
 }
 
 async function hmac(key: Uint8Array, msg: string): Promise<Uint8Array> {
-  const k = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, [
-    'sign',
-  ]);
+  const k = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   return new Uint8Array(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(msg)));
 }
 
 type TgUser = { id?: number; first_name?: string; username?: string };
 
-// Возвращает user из initData, если подпись валидна; иначе null.
 async function validateInitData(initData: string, botToken: string): Promise<TgUser | null> {
   const p = new URLSearchParams(initData);
   const hash = p.get('hash');
@@ -47,7 +44,6 @@ async function validateInitData(initData: string, botToken: string): Promise<TgU
   const hex = [...sig].map((b) => b.toString(16).padStart(2, '0')).join('');
   if (hex !== hash) return null;
 
-  // Свежесть подписи — не старше суток.
   const authDate = Number(p.get('auth_date') ?? 0);
   if (authDate && Date.now() / 1000 - authDate > 86400) return null;
 
@@ -65,7 +61,10 @@ Deno.serve(async (req) => {
   const botToken = Deno.env.get('BOT_TOKEN');
   if (!botToken) return json({ error: 'BOT_TOKEN not set' }, 500);
 
-  let body: { initData?: string; progress?: { onboarded?: boolean; lastShaveAt?: number | null; streak?: number } };
+  let body: {
+    initData?: string;
+    progress?: { onboarded?: boolean; lastShaveAt?: number | null; streak?: number };
+  };
   try {
     body = await req.json();
   } catch {
@@ -80,6 +79,7 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
+  // ── Читаем текущую запись ─────────────────────────────────────────────────
   const { data: existing } = await db
     .from('players')
     .select('*')
@@ -87,18 +87,46 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   const inc = body.progress;
+
+  // Мёрж: берём максимальные значения между сервером и клиентом.
+  const mergedOnboarded = Boolean(existing?.onboarded) || Boolean(inc?.onboarded);
+  const mergedLastShave = Math.max(existing?.last_shave_at ?? 0, inc?.lastShaveAt ?? 0) || null;
+  const mergedStreak = Math.max(existing?.streak ?? 0, inc?.streak ?? 0);
+
+  // ── Оптимизация: пропускаем запись если ничего не изменилось ─────────────
+  const noChange =
+    existing &&
+    Boolean(existing.onboarded) === mergedOnboarded &&
+    (existing.last_shave_at ?? 0) === (mergedLastShave ?? 0) &&
+    (existing.streak ?? 0) === mergedStreak;
+
+  if (noChange) {
+    // Данные совпадают — возвращаем кешированный результат без записи в БД.
+    return json({
+      onboarded: existing.onboarded,
+      lastShaveAt: existing.last_shave_at,
+      streak: existing.streak,
+      firstName: existing.first_name,
+    });
+  }
+
+  // ── Запись только при реальных изменениях ─────────────────────────────────
   const merged = {
     telegram_id: user.id,
     first_name: user.first_name ?? existing?.first_name ?? null,
     username: user.username ?? existing?.username ?? null,
-    // Берём более продвинутое состояние, чтобы не потерять прогресс между устройствами.
-    onboarded: Boolean(existing?.onboarded) || Boolean(inc?.onboarded),
-    last_shave_at: Math.max(existing?.last_shave_at ?? 0, inc?.lastShaveAt ?? 0) || null,
-    streak: Math.max(existing?.streak ?? 0, inc?.streak ?? 0),
+    onboarded: mergedOnboarded,
+    last_shave_at: mergedLastShave,
+    streak: mergedStreak,
     updated_at: new Date().toISOString(),
   };
 
-  const { data: saved, error } = await db.from('players').upsert(merged).select().maybeSingle();
+  const { data: saved, error } = await db
+    .from('players')
+    .upsert(merged)
+    .select()
+    .maybeSingle();
+
   if (error) return json({ error: error.message }, 500);
 
   return json({

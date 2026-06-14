@@ -1,4 +1,4 @@
-// Боковое меню (дровер): таймер дембеля, дев-инструменты (в DEV), подпись.
+// Боковое меню (дровер): таймер дембеля, звук, дев-инструменты.
 
 import { useEffect, useState } from 'react';
 import { DevPanel, type Dev } from './DevPanel';
@@ -9,13 +9,15 @@ type Props = {
   isDev: boolean;
   day: number;
   onboarded: boolean;
+  soundEnabled: boolean;
+  bootsDirty: boolean;
   serviceStart: number;
   serviceEnd: number;
   dev: Dev;
   onNewScene: () => void;
+  onToggleSound: () => void;
 };
 
-// Живой обратный отсчёт до призыва/дембеля.
 function ServiceTimer({ start, end }: { start: number; end: number }) {
   const [, force] = useState(0);
   useEffect(() => {
@@ -55,10 +57,13 @@ export function Menu({
   isDev,
   day,
   onboarded,
+  soundEnabled,
+  bootsDirty,
   serviceStart,
   serviceEnd,
   dev,
   onNewScene,
+  onToggleSound,
 }: Props) {
   return (
     <div className="menu-overlay" onClick={onClose}>
@@ -72,7 +77,28 @@ export function Menu({
 
         <div className="menu-body">
           <ServiceTimer start={serviceStart} end={serviceEnd} />
-          {isDev && <DevPanel day={day} onboarded={onboarded} dev={dev} onNewScene={onNewScene} />}
+
+          {/* Переключатель звука */}
+          <button
+            className="sound-toggle"
+            onClick={onToggleSound}
+            aria-label={soundEnabled ? 'Выключить звук' : 'Включить звук'}
+          >
+            <span className="sound-icon">{soundEnabled ? '🔊' : '🔇'}</span>
+            <span className="sound-label">{soundEnabled ? 'Звук вкл' : 'Звук выкл'}</span>
+          </button>
+
+          {isDev && (
+            <DevPanel
+              day={day}
+              onboarded={onboarded}
+              bootsDirty={bootsDirty}
+              serviceStart={serviceStart}
+              serviceEnd={serviceEnd}
+              dev={dev}
+              onNewScene={onNewScene}
+            />
+          )}
         </div>
 
         <div className="menu-footer">

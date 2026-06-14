@@ -3,7 +3,9 @@ import { pickScene } from './scenes';
 import { initTelegram } from './telegram';
 import { preloadImages } from './preload';
 import { PRELOAD_SPRITES } from './game/sprites';
+import { BOOT_PRELOAD } from './game/bootAssets';
 import { useGame } from './game/useGame';
+import { SFX } from './game/sound';
 import { Stage } from './components/Stage';
 import { Scene } from './components/Scene';
 import { Oleg } from './components/Oleg';
@@ -14,15 +16,13 @@ import { ActionBar } from './components/ActionBar';
 import { Menu } from './components/Menu';
 import { BlinkOverlay } from './components/BlinkOverlay';
 import { LoadingScreen } from './components/LoadingScreen';
+import { BootScene } from './components/BootScene';
 
-// DEV-панель: локальная разработка, явный ?dev в URL, или Telegram Mini App
-// (приложение пока в стадии разработки — дев-инструменты нужны всегда).
 const IS_DEV =
     import.meta.env.DEV ||
     location.search.includes('dev') ||
     !!(window.Telegram?.WebApp);
 
-// Минимальное время показа лоадера — чтобы при кеше он не «моргал».
 const MIN_LOADER_MS = 400;
 
 export function App() {
@@ -36,30 +36,43 @@ export function App() {
         initTelegram();
     }, []);
 
-    // Предзагружаем все спрайты + фон текущей сцены ДО старта игры, чтобы смена
-    // спрайта в бою была мгновенной (на телефоне иначе спрайт качается по сети).
     useEffect(() => {
         let cancelled = false;
         const start = Date.now();
-        const srcs = [...PRELOAD_SPRITES, scene.src];
+        const srcs = [...PRELOAD_SPRITES, scene.src, ...BOOT_PRELOAD];
         preloadImages(srcs, (loaded, total) => {
             if (!cancelled) setProgress(loaded / total);
         }).then(() => {
             const wait = Math.max(0, MIN_LOADER_MS - (Date.now() - start));
             window.setTimeout(() => {
-                if (!cancelled) setReady(true);
+                if (!cancelled) {
+                    setReady(true);
+                    // Небольшая задержка — AudioContext должен быть разблокирован
+                    // первым пользовательским взаимодействием (здесь оно уже было).
+                    setTimeout(() => SFX.startup(game.state.soundEnabled), 120);
+                }
             }, wait);
         });
-        return () => {
-            cancelled = true;
-        };
+        return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scene]);
 
     const stage = game.state.shaveStage;
     const midShave = stage !== 'none';
-    const locked = !midShave && !game.shaveable;
-    const label =
-        stage === 'foam'
+
+    // Кнопка «Почистить берцы» активна когда: грязные, диалог уже показан, не бреемся.
+    const bootsPending =
+        game.state.bootsDirty &&
+        !game.state.bootsDialogDue &&
+        game.state.onboarded &&
+        !midShave &&
+        !game.bootsMode;
+
+    const locked = !bootsPending && !midShave && !game.shaveable;
+
+    const label = bootsPending
+        ? 'Почистить берцы'
+        : stage === 'foam'
             ? 'Побрить'
             : stage === 'half'
                 ? 'Закончить бритьё'
@@ -67,34 +80,55 @@ export function App() {
                     ? 'Нанести пену'
                     : 'Побрить';
 
-    // Пока не предзагрузились ассеты — стилизованный экран загрузки.
+    const holdMode = !bootsPending && midShave;
+
+    function handleAction() {
+        if (bootsPending) game.startBootCleaning();
+        else game.act();
+    }
+
+    function handleMenu() {
+        SFX.menuOpen(game.state.soundEnabled);
+        setMenuOpen(true);
+    }
+
     if (!ready) return <LoadingScreen progress={progress} />;
 
     return (
         <Stage bg={scene.src}>
             <Scene src={scene.src} />
-            <Oleg src={game.sprite} placement={scene.oleg} onTap={game.tapOleg} />
-            <div className="foot-fade" aria-hidden />
-            <Atmosphere />
 
-            <Header menuOpen={menuOpen} onMenu={() => setMenuOpen(true)} />
-
-            {game.dialog && (
-                <Dialog
-                    key={game.dialog.pages.join('|')}
-                    {...game.dialog}
-                    onClose={() => game.setDialog(null)}
+            {game.bootsMode ? (
+                <BootScene
+                    soundEnabled={game.state.soundEnabled}
+                    onDone={game.finishBootCleaning}
                 />
-            )}
+            ) : (
+                <>
+                    <Oleg src={game.sprite} placement={scene.oleg} onTap={game.tapOleg} />
+                    <div className="foot-fade" aria-hidden />
+                    <Atmosphere />
+                    <Header menuOpen={menuOpen} onMenu={handleMenu} />
 
-            <ActionBar
-                label={label}
-                locked={locked}
-                holdMode={midShave}
-                busy={game.blinking || !!game.dialog}
-                onAction={game.act}
-                onLockedTap={game.tapLocked}
-            />
+                    {game.dialog && (
+                        <Dialog
+                            key={game.dialog.pages.join('|')}
+                            {...game.dialog}
+                            soundEnabled={game.state.soundEnabled}
+                            onClose={game.closeDialog}
+                        />
+                    )}
+
+                    <ActionBar
+                        label={label}
+                        locked={locked}
+                        holdMode={holdMode}
+                        busy={game.blinking || !!game.dialog}
+                        onAction={handleAction}
+                        onLockedTap={game.tapLocked}
+                    />
+                </>
+            )}
 
             <BlinkOverlay
                 phase={game.blinkPhase}
@@ -108,10 +142,13 @@ export function App() {
                     isDev={IS_DEV}
                     day={game.day}
                     onboarded={game.state.onboarded}
+                    soundEnabled={game.state.soundEnabled}
+                    bootsDirty={game.state.bootsDirty}
                     serviceStart={game.serviceStart}
                     serviceEnd={game.serviceEnd}
                     dev={game.dev}
                     onNewScene={() => setScene(pickScene())}
+                    onToggleSound={game.dev.toggleSound}
                 />
             )}
         </Stage>

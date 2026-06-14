@@ -1,14 +1,12 @@
-
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Script } from '../game/dialogues';
+import { SFX } from '../game/sound';
 
 const CHAR_MS = 26;
 const OUT_MS = 200;
 
 type Segment = { text: string; accent: boolean };
 
-// «Привет, я *Олег*» → [{'Привет, я ',false},{'Олег',true}]
 function parseSegments(page: string): Segment[] {
   return page
     .split('*')
@@ -16,9 +14,9 @@ function parseSegments(page: string): Segment[] {
     .filter((s) => s.text.length > 0);
 }
 
-type Props = Script & { onClose: () => void };
+type Props = Script & { onClose: () => void; soundEnabled?: boolean };
 
-export function Dialog({ speaker = 'Олег', pages, onClose }: Props) {
+export function Dialog({ speaker = 'Олег', pages, onClose, soundEnabled = true }: Props) {
   const [page, setPage] = useState(0);
   const [shown, setShown] = useState(0);
   const [closing, setClosing] = useState(false);
@@ -32,7 +30,6 @@ export function Dialog({ speaker = 'Олег', pages, onClose }: Props) {
   const done = shown >= plainLen;
   const isLast = page >= pages.length - 1;
 
-  // Печать текущей страницы.
   useEffect(() => {
     setShown(0);
     if (typeTimer.current) clearInterval(typeTimer.current);
@@ -60,18 +57,20 @@ export function Dialog({ speaker = 'Олег', pages, onClose }: Props) {
   function advance() {
     if (closing) return;
     if (!done) {
-      setShown(plainLen); // допечатать сразу
+      setShown(plainLen);
+      SFX.dialogTap(soundEnabled);
       return;
     }
     if (!isLast) {
+      SFX.dialogTap(soundEnabled);
       setPage((p) => p + 1);
       return;
     }
+    SFX.dialogClose(soundEnabled);
     setClosing(true);
     outTimer.current = window.setTimeout(onClose, OUT_MS);
   }
 
-  // Сколько символов показать в каждом сегменте на текущем `shown`.
   let used = 0;
 
   return (
@@ -99,7 +98,14 @@ export function Dialog({ speaker = 'Олег', pages, onClose }: Props) {
         })}
         <span className="dialog-caret">▍</span>
       </div>
-      <div className={`dialog-hint ${done ? 'is-ready' : ''}`}>{isLast ? '✕' : '▸'}</div>
+
+      {/* Подсказка: слева текст «нажмите, чтобы продолжить», справа стрелка/крест */}
+      <div className="dialog-footer">
+        <span className={`dialog-tap-hint${done ? ' is-ready' : ''}`}>
+          нажмите, чтобы продолжить
+        </span>
+        <span className={`dialog-hint${done ? ' is-ready' : ''}`}>{isLast ? '✕' : '▸'}</span>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
-// Дев-инструменты (живут внутри меню): быстрая прокрутка состояния для тестов.
+// Дев-инструменты: быстрая прокрутка состояния, тестирование таймера и берцов.
 
 import { MAX_DAY } from '../game/types';
+import { computeCountdown } from '../game/service';
 
 export type Dev = {
   setDay: (d: number) => void;
@@ -8,18 +9,35 @@ export type Dev = {
   reset: () => void;
   serviceBeforeCall: () => void;
   serviceCallNow: () => void;
-  serviceDemobSoon: () => void;
+  serviceDemobSoon: (sec?: number) => void;
   serviceReset: () => void;
+  triggerBoots: () => void;
+  toggleSound: () => void;
 };
 
 type Props = {
   day: number;
   onboarded: boolean;
+  bootsDirty: boolean;
+  serviceStart: number;
+  serviceEnd: number;
   dev: Dev;
   onNewScene: () => void;
 };
 
-export function DevPanel({ day, onboarded, dev, onNewScene }: Props) {
+export function DevPanel({ day, onboarded, bootsDirty, serviceStart, serviceEnd, dev, onNewScene }: Props) {
+  const { phase, days, hours, minutes, seconds } = computeCountdown(serviceStart, serviceEnd);
+
+  const phaseLabel =
+    phase === 'before' ? 'до призыва' :
+    phase === 'serving' ? 'служит' :
+    '🎖 дембель';
+
+  const timeStr =
+    phase === 'done'
+      ? '—'
+      : `${days}д ${hours}ч ${minutes}м ${seconds}с`;
+
   return (
     <div className="dev-block">
       <div className="dev-title">DEV · день {onboarded ? day : '—'}</div>
@@ -34,15 +52,29 @@ export function DevPanel({ day, onboarded, dev, onNewScene }: Props) {
         <button onClick={onNewScene}>фон</button>
       </div>
 
-      <div className="dev-title">срок службы</div>
+      <div className="dev-title">
+        берцы {bootsDirty ? '🥾 (грязные)' : '✓'}
+      </div>
+      <div className="dev-row">
+        <button onClick={dev.triggerBoots}>запросить берцы</button>
+      </div>
+
+      <div className="dev-title">
+        таймер · <span className="dev-phase">{phaseLabel}</span>
+      </div>
+      <div className="dev-timer-info">{timeStr}</div>
       <div className="dev-row">
         <button onClick={dev.serviceBeforeCall}>до призыва</button>
         <button onClick={dev.serviceCallNow}>призыв</button>
       </div>
       <div className="dev-row">
-        <button onClick={dev.serviceDemobSoon}>дембель 1м</button>
+        <button onClick={() => dev.serviceDemobSoon(10)}>дембель 10с</button>
+        <button onClick={() => dev.serviceDemobSoon(60)}>дембель 1м</button>
+      </div>
+      <div className="dev-row">
         <button onClick={dev.serviceReset}>сброс срока</button>
       </div>
+
     </div>
   );
 }
