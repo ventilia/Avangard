@@ -100,6 +100,7 @@ export function App() {
 
             {game.bootsMode ? (
                 <BootScene
+                    key={game.bootsKey}
                     soundEnabled={game.state.soundEnabled}
                     onDone={game.finishBootCleaning}
                 />
@@ -108,7 +109,14 @@ export function App() {
                     <Oleg src={game.sprite} placement={scene.oleg} onTap={game.tapOleg} />
                     <div className="foot-fade" aria-hidden />
                     <Atmosphere />
-                    <Header menuOpen={menuOpen} onMenu={handleMenu} />
+                    <Header
+                        menuOpen={menuOpen}
+                        onMenu={handleMenu}
+                        streak={game.state.streak}
+                        streakUpdatedAt={game.state.streakUpdatedAt}
+                        bootsDirty={game.state.bootsDirty}
+                        onStreakTap={game.tapStreak}
+                    />
 
                     {game.dialog && (
                         <Dialog

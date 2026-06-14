@@ -17,17 +17,20 @@ export type GameState = {
   devDay: number | null;
   devServiceStart: number | null;
   devServiceEnd: number | null;
-  shaveCount: number;       // итоговое число полных бритий
-  bootsDirty: boolean;      // берцы ждут чистки
-  bootsDialogDue: boolean;  // диалог с просьбой ещё не показан
+  shaveCount: number;
+  bootsDirty: boolean;
+  bootsDialogDue: boolean;
+  bootsDirtySinceDay: number | null; // игровой день (computeDay) когда запачкались
   soundEnabled: boolean;
-  demobSeen: boolean;       // речь о дембеле уже показана
+  demobSeen: boolean;
+  streak: number;
+  streakUpdatedAt: number | null;
 };
 
 export type GameAction =
   | { type: 'FOAM' }
   | { type: 'SHAVE'; halfVariant?: 0 | 1 }
-  | { type: 'HYDRATE'; onboarded: boolean; lastShaveAt: number | null }
+  | { type: 'HYDRATE'; onboarded: boolean; lastShaveAt: number | null; streak?: number }
   | { type: 'BOOTS_DIALOG_SHOWN' }
   | { type: 'CLEAN_BOOTS' }
   | { type: 'TOGGLE_SOUND' }
@@ -36,4 +39,5 @@ export type GameAction =
   | { type: 'DEV_SET_ONBOARDED'; value: boolean }
   | { type: 'DEV_SET_SERVICE'; start?: number | null; end?: number | null }
   | { type: 'DEV_TRIGGER_BOOTS' }
-  | { type: 'DEV_RESET' };
+  | { type: 'DEV_RESET' }
+  | { type: 'BOOTS_EXPIRED' };

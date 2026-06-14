@@ -27,6 +27,7 @@ export function Oleg({ src, placement, onTap }: Props) {
         className={`oleg-wrap${onTap ? ' is-tappable' : ''}`}
         style={style}
         onClick={onTap}
+        onContextMenu={(e) => e.preventDefault()}
       >
         <div className="oleg-stack">
           {PRELOAD_SPRITES.map((s) => {

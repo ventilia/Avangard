@@ -30,6 +30,14 @@ export function Dialog({ speaker = 'Олег', pages, onClose, soundEnabled = tr
   const done = shown >= plainLen;
   const isLast = page >= pages.length - 1;
 
+  const soundEnabledRef = useRef(soundEnabled);
+  soundEnabledRef.current = soundEnabled;
+
+  // Тик на каждый символ при авто-печати (не при пропуске тапом).
+  useEffect(() => {
+    if (shown > 0 && shown < plainLen) SFX.tick(soundEnabledRef.current);
+  }, [shown, plainLen]);
+
   useEffect(() => {
     setShown(0);
     if (typeTimer.current) clearInterval(typeTimer.current);

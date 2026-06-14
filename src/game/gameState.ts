@@ -17,8 +17,11 @@ export const initialState: GameState = {
   shaveCount: 0,
   bootsDirty: false,
   bootsDialogDue: false,
+  bootsDirtySinceDay: null,
   soundEnabled: true,
   demobSeen: false,
+  streak: 0,
+  streakUpdatedAt: null,
 };
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
@@ -41,6 +44,19 @@ export function saveState(state: GameState): void {
   }
 }
 
+// ── Стрик-хелпер ──────────────────────────────────────────────────────────────
+
+function dayIdx(ts: number) { return Math.floor(ts / DAY_MS); }
+
+function computeStreak(state: GameState): { streak: number; streakUpdatedAt: number } {
+  const now = Date.now();
+  const today = dayIdx(now);
+  const last = state.streakUpdatedAt != null ? dayIdx(state.streakUpdatedAt) : null;
+  if (last === null || today - last >= 2) return { streak: 1, streakUpdatedAt: now };
+  if (today === last) return { streak: state.streak, streakUpdatedAt: state.streakUpdatedAt! };
+  return { streak: state.streak + 1, streakUpdatedAt: now };
+}
+
 // ── Редьюсер ─────────────────────────────────────────────────────────────────
 
 export function reducer(state: GameState, action: GameAction): GameState {
@@ -57,6 +73,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
       if (state.shaveStage === 'half') {
         const newCount = state.shaveCount + 1;
         const triggerBoots = newCount % BOOTS_EVERY === 0;
+        const { streak, streakUpdatedAt } = computeStreak(state);
         return {
           ...state,
           shaveStage: 'none',
@@ -66,6 +83,10 @@ export function reducer(state: GameState, action: GameAction): GameState {
           shaveCount: newCount,
           bootsDirty: triggerBoots ? true : state.bootsDirty,
           bootsDialogDue: triggerBoots ? true : state.bootsDialogDue,
+          // После бритья день сбрасывается в 1 — берцы выданы в день 1.
+          bootsDirtySinceDay: triggerBoots ? 1 : state.bootsDirtySinceDay,
+          streak,
+          streakUpdatedAt,
         };
       }
       return state;
@@ -73,8 +94,13 @@ export function reducer(state: GameState, action: GameAction): GameState {
     case 'BOOTS_DIALOG_SHOWN':
       return { ...state, bootsDialogDue: false };
 
-    case 'CLEAN_BOOTS':
-      return { ...state, bootsDirty: false, bootsDialogDue: false };
+    case 'CLEAN_BOOTS': {
+      const { streak, streakUpdatedAt } = computeStreak(state);
+      return { ...state, bootsDirty: false, bootsDialogDue: false, bootsDirtySinceDay: null, streak, streakUpdatedAt };
+    }
+
+    case 'BOOTS_EXPIRED':
+      return { ...state, bootsDirty: false, bootsDialogDue: false, bootsDirtySinceDay: null, streak: 0, streakUpdatedAt: null };
 
     case 'TOGGLE_SOUND':
       return { ...state, soundEnabled: !state.soundEnabled };
@@ -82,13 +108,30 @@ export function reducer(state: GameState, action: GameAction): GameState {
     case 'DEMOB_SEEN':
       return { ...state, demobSeen: true };
 
-    case 'DEV_SET_DAY':
+    case 'DEV_SET_DAY': {
+      const target = clamp(action.day, 1, MAX_DAY);
+      const realDay = state.onboarded && state.lastShaveAt
+        ? clamp(Math.floor((Date.now() - state.lastShaveAt) / DAY_MS) + 1, 1, MAX_DAY)
+        : 1;
+      const delta = Math.max(0, target - realDay);
+      const newShaveCount = state.shaveCount + delta;
+      const newLastShaveAt = Date.now() - (target - 1) * DAY_MS;
+      const triggerBoots = delta > 0 && state.onboarded
+        && Math.floor(newShaveCount / BOOTS_EVERY) > Math.floor(state.shaveCount / BOOTS_EVERY);
+      const streakUpdatedAt = delta > 0 ? newLastShaveAt : state.streakUpdatedAt;
       return {
         ...state,
         onboarded: true,
-        devDay: clamp(action.day, 1, MAX_DAY),
-        lastShaveAt: state.lastShaveAt ?? Date.now(),
+        devDay: null,
+        lastShaveAt: newLastShaveAt,
+        shaveCount: newShaveCount,
+        bootsDirty: triggerBoots || state.bootsDirty,
+        bootsDialogDue: triggerBoots || state.bootsDialogDue,
+        // В дев-режиме сохраняем игровой день тригера — expiry сравнит с computeDay.
+        bootsDirtySinceDay: triggerBoots ? target : state.bootsDirtySinceDay,
+        streakUpdatedAt,
       };
+    }
 
     case 'DEV_SET_ONBOARDED':
       return {
@@ -101,7 +144,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
 
     case 'HYDRATE': {
       const lastShaveAt = Math.max(state.lastShaveAt ?? 0, action.lastShaveAt ?? 0) || null;
-      return { ...state, onboarded: state.onboarded || action.onboarded, lastShaveAt };
+      const streak = Math.max(state.streak, action.streak ?? 0);
+      const streakUpdatedAt = state.streakUpdatedAt ?? lastShaveAt;
+      return { ...state, onboarded: state.onboarded || action.onboarded, lastShaveAt, streak, streakUpdatedAt };
     }
 
     case 'DEV_SET_SERVICE':
@@ -112,11 +157,11 @@ export function reducer(state: GameState, action: GameAction): GameState {
       };
 
     case 'DEV_TRIGGER_BOOTS':
-      // Берцы грязные, диалог уже показан, онбординг засчитан (берцы — пост-бритьё фича).
       return {
         ...state,
         bootsDirty: true,
         bootsDialogDue: false,
+        bootsDirtySinceDay: computeDay(state),
         onboarded: true,
         lastShaveAt: state.lastShaveAt ?? Date.now(),
       };

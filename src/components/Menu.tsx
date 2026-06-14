@@ -1,8 +1,10 @@
-// Боковое меню (дровер): таймер дембеля, звук, дев-инструменты.
+// Боковое меню (дровер): таймер дембеля, звук, дев-инструменты, каналы.
 
 import { useEffect, useState } from 'react';
 import { DevPanel, type Dev } from './DevPanel';
 import { computeCountdown } from '../game/service';
+import logo1 from '../asset/logo1.png';
+import logo2 from '../asset/logo2.png';
 
 type Props = {
   onClose: () => void;
@@ -34,22 +36,23 @@ function ServiceTimer({ start, end }: { start: number; end: number }) {
         <div className="service-done">🎖 Свободен!</div>
       ) : (
         <div className="service-time">
-          <span>
-            <b>{c.days}</b> дн
-          </span>
-          <span>
-            <b>{c.hours}</b> ч
-          </span>
-          <span>
-            <b>{c.minutes}</b> м
-          </span>
-          <span>
-            <b>{c.seconds}</b> с
-          </span>
+          <span><b>{c.days}</b> дн</span>
+          <span><b>{c.hours}</b> ч</span>
+          <span><b>{c.minutes}</b> м</span>
+          <span><b>{c.seconds}</b> с</span>
         </div>
       )}
     </div>
   );
+}
+
+function openTG(url: string) {
+  const tg = (window as unknown as { Telegram?: { WebApp?: { openTelegramLink?: (u: string) => void } } }).Telegram?.WebApp;
+  if (tg?.openTelegramLink) {
+    tg.openTelegramLink(url);
+  } else {
+    window.open(url, '_blank', 'noopener');
+  }
 }
 
 export function Menu({
@@ -70,15 +73,12 @@ export function Menu({
       <aside className="menu-panel" onClick={(e) => e.stopPropagation()}>
         <div className="menu-head">
           <span>Меню</span>
-          <button className="menu-close" onClick={onClose} aria-label="Закрыть">
-            ✕
-          </button>
+          <button className="menu-close" onClick={onClose} aria-label="Закрыть">✕</button>
         </div>
 
         <div className="menu-body">
           <ServiceTimer start={serviceStart} end={serviceEnd} />
 
-          {/* Переключатель звука */}
           <button
             className="sound-toggle"
             onClick={onToggleSound}
@@ -102,7 +102,25 @@ export function Menu({
         </div>
 
         <div className="menu-footer">
-          Олег Авангард <b>×</b> Venttt
+          <div className="menu-channels">
+            <button
+              className="menu-channel-btn"
+              onClick={() => openTG('https://t.me/oleg_avangard')}
+              aria-label="Канал Олега"
+            >
+              <img src={logo1} className="menu-channel-img" draggable={false} alt="" />
+              <span className="menu-channel-name">oleg_avangard</span>
+            </button>
+            <button
+              className="menu-channel-btn"
+              onClick={() => openTG('https://t.me/VENTTTP')}
+              aria-label="Канал Venttt"
+            >
+              <img src={logo2} className="menu-channel-img" draggable={false} alt="" />
+              <span className="menu-channel-name">VENTTTP</span>
+            </button>
+          </div>
+          <div className="menu-credits">Олег Авангард <b>×</b> Venttt</div>
         </div>
       </aside>
     </div>

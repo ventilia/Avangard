@@ -156,8 +156,13 @@ async def on_shutdown(app: web.Application) -> None:
     await bot.session.close()
 
 
+async def healthcheck(_: web.Request) -> web.Response:
+    return web.Response(text='OK')
+
+
 def run_webhook() -> None:
     app = web.Application()
+    app.router.add_get('/', healthcheck)
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
 
